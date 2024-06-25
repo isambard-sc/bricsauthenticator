@@ -39,11 +39,11 @@ jobs:
         python -m pip install "${GITHUB_WORKSPACE}[dev]"
 
     - name: Lint
-      if: ${{ steps.install.conclusion == 'success' }}
+      if: ${{ always() && steps.install.conclusion == 'success' }}
       run: |
         make lint
 
     - name: Test
-      if: ${{ steps.install.conclusion == 'success' }}
+      if: ${{ always() && steps.install.conclusion == 'success' }}
       run: |
         make test
