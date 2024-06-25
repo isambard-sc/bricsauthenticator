@@ -83,6 +83,23 @@ This is useful in combination with an editable install from a local copy of the 
 /path/to/my-venv/bin/python -m pip install -e '/path/to/mappingauthenticator[dev]'
 ```
 
+### Development install in a Conda environment
+
+JupyterHub depends on [configurable-http-proxy][configurable-http-proxy-github], an [npm][npm-docs] package. This can be installed using `npm`, as described in the [JupyterHub Quickstart documentation][quickstart-jupyterhub-documentation]. It can also be installed using `conda`, from conda-forge.
+
+To set up a development Conda environment containing an editable `pip` installation of `mappingauthenticator` (with development dependencies from `pip`) and external dependencies met using Conda packages, use `environment-dev.yml`, e.g.
+
+[configurable-http-proxy-github]: https://github.com/jupyterhub/configurable-http-proxy
+[npm-docs]: https://docs.npmjs.com/
+[quickstart-jupyterhub-documentation]: https://jupyterhub.readthedocs.io/en/stable/tutorial/quickstart.html#installation
+
+```shell
+conda env create -f environment-dev.yml
+```
+
+> [!NOTE]
+> This must be run from the root of the repository, since a relative path is used to install the `mappingauthenticator` package.
+
 ## Usage
 
 <!-- TODO -->
