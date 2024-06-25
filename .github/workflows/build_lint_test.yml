@@ -34,13 +34,16 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install package and tooling 
+      id: install
       run: |
         python -m pip install "${GITHUB_WORKSPACE}[dev]"
 
     - name: Lint
+      if: ${{ steps.install.conclusion == 'success' }}
       run: |
         make lint
 
     - name: Test
+      if: ${{ steps.install.conclusion == 'success' }}
       run: |
         make test
