@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mappingauthenticator"
+dynamic = ["version"]
+authors = [
+  { name="James C. Womack", email="J.C.Womack@bristol.ac.uk" },
+]
+description = "JupyterHub `Authenticator` backed by a simple username:password mapping"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Private :: Do Not Upload"
+]
+
+[project.optional-dependencies]
+# Install development dependencies using the [dev] variant, e.g. for local
+# editable install from current directory:
+#   python -m pip install -e ".[dev]"
+dev = [
+    "pytest",
+    "pytest-mock",
+    "autoflake",
+    "isort",
+    "black",
+    "pylint",
+    "debugpy",  # for debugging e.g. with VSCode
+]
+
+[project.urls]
+Homepage = "https://github.com/isambard-sc/mappingauthenticator"
+
+[tool.setuptools_scm]
+root = "."
+version_file = "src/mappingauthenticator/_version.py"
+
+[tool.autoflake]
+remove-all-unused-imports = true
+ignore-init-module-imports = true
+remove-unused-variables = true
+
+[tool.isort]
+line_length = 120
+profile = 'black'
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.basic]
+const-naming-style = "UPPER_CASE"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--strict-markers",
+    "--import-mode=importlib",
+]
+tmp_path_retention_count = 3
+tmp_path_retention_policy = "all"

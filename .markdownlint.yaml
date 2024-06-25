@@ -1,0 +1,13 @@
+default: true
+MD013: false
+MD014: false
+
+# Allow duplicate headings that are not siblings, different sections can have
+# identical subheadings
+MD024:
+  siblings_only: true
+
+# Disable checking for link/image reference definitions since markdownlint
+# seems not to be able to identify reference links inside MyST-MD directives
+#MD053: false
+
