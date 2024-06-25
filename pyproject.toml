@@ -17,6 +17,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Private :: Do Not Upload"
 ]
+dependencies = [
+    "jupyterhub >= 5.0",
+]
 
 [project.optional-dependencies]
 # Install development dependencies using the [dev] variant, e.g. for local

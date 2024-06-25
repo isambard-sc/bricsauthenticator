@@ -1,0 +1,16 @@
+# Editable development install of Python package using pip inside a Conda 
+# environment, with external dependencies met via conda-forge packages
+name: mappingauthenticator-devenv
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python >= 3.10
+
+  # External dependency for pip install of jupyterhub
+  # https://github.com/jupyterhub/configurable-http-proxy
+  - configurable-http-proxy
+
+  - pip
+  - pip:
+    - --editable '.[dev]'
