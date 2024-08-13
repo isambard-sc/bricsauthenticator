@@ -1,6 +1,6 @@
-# mappingauthenticator
+# bricsauthenticator
 
-JupyterHub `Authenticator` backed by a simple username:password mapping
+JupyterHub `Authenticator` for the BriCS JupyterHub service
 
 ## Install
 
@@ -19,7 +19,7 @@ then install the package into the virtual environment.
 ### Install directly from the GitHub repository
 
 ```shell
-/path/to/my-venv/bin/python -m pip install "mappingauthenticator @ git+https://github.com/isambard-sc/mappingauthenticator.git"
+/path/to/my-venv/bin/python -m pip install "bricsauthenticator @ git+https://github.com/isambard-sc/bricsauthenticator.git"
 ```
 
 ### Install from local clone of repository
@@ -27,13 +27,13 @@ then install the package into the virtual environment.
 Clone the repository
 
 ```shell
-git clone https://github.com/isambard-sc/mappingauthenticator.git
+git clone https://github.com/isambard-sc/bricsauthenticator.git
 ```
 
 Then install into the virtual environment using the path to the cloned repository
 
 ```shell
-/path/to/my-venv/bin/python -m pip install /path/to/mappingauthenticator
+/path/to/my-venv/bin/python -m pip install /path/to/bricsauthenticator
 ```
 
 An [editable install][editable-installs-pip-docs] is useful when developing. This adds files in the source directory to the Python import path, so edits to the source code are reflected in the installed package.
@@ -41,7 +41,7 @@ An [editable install][editable-installs-pip-docs] is useful when developing. Thi
 [editable-installs-pip-docs]: https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs
 
 ```shell
-/path/to/my-venv/bin/python -m pip install -e /path/to/mappingauthenticator
+/path/to/my-venv/bin/python -m pip install -e /path/to/bricsauthenticator
 ```
 
 > [!NOTE]
@@ -52,7 +52,7 @@ An [editable install][editable-installs-pip-docs] is useful when developing. Thi
 Clone the repository
 
 ```shell
-git clone https://github.com/isambard-sc/mappingauthenticator.git
+git clone https://github.com/isambard-sc/bricsauthenticator.git
 ```
 
 Build the distribution (requires [`build`][pypa-build-docs])
@@ -60,34 +60,34 @@ Build the distribution (requires [`build`][pypa-build-docs])
 [pypa-build-docs]: https://build.pypa.io
 
 ```shell
-python -m build /path/to/mappingauthenticator
+python -m build /path/to/bricsauthenticator
 ```
 
 Install from the sdist or wheel placed in the `dist/` directory
 
 ```shell
-/path/to/my-venv/bin/python -m pip install /path/to/mappingauthenticator/dist/mappingauthenticator-{version}.tar.gz
+/path/to/my-venv/bin/python -m pip install /path/to/bricsauthenticator/dist/bricsauthenticator-{version}.tar.gz
 ```
 
 ```shell
-/path/to/my-venv/bin/python -m pip install /path/to/mappingauthenticator/dist/mappingauthenticator-{version}-py3-none-any.whl
+/path/to/my-venv/bin/python -m pip install /path/to/bricsauthenticator/dist/bricsauthenticator-{version}-py3-none-any.whl
 ```
 
 ### Install with development dependencies
 
-Use the `[dev]` optional dependency to install development tools (linting, formatting, testing etc.) alongside the `mappingauthenticator` package.
+Use the `[dev]` optional dependency to install development tools (linting, formatting, testing etc.) alongside the `bricsauthenticator` package.
 
 This is useful in combination with an editable install from a local copy of the repository. The local copy can then be worked with using the development tools.
 
 ```shell
-/path/to/my-venv/bin/python -m pip install -e '/path/to/mappingauthenticator[dev]'
+/path/to/my-venv/bin/python -m pip install -e '/path/to/bricsauthenticator[dev]'
 ```
 
 ### Development install in a Conda environment
 
 JupyterHub depends on [configurable-http-proxy][configurable-http-proxy-github], an [npm][npm-docs] package. This can be installed using `npm`, as described in the [JupyterHub Quickstart documentation][quickstart-jupyterhub-documentation]. It can also be installed using `conda`, from conda-forge.
 
-To set up a development Conda environment containing an editable `pip` installation of `mappingauthenticator` (with development dependencies from `pip`) and external dependencies met using Conda packages, use `environment-dev.yml`, e.g.
+To set up a development Conda environment containing an editable `pip` installation of `bricsauthenticator` (with development dependencies from `pip`) and external dependencies met using Conda packages, use `environment-dev.yml`, e.g.
 
 [configurable-http-proxy-github]: https://github.com/jupyterhub/configurable-http-proxy
 [npm-docs]: https://docs.npmjs.com/
@@ -98,7 +98,7 @@ conda env create -f environment-dev.yml
 ```
 
 > [!NOTE]
-> This must be run from the root of the repository, since a relative path is used to install the `mappingauthenticator` package.
+> This must be run from the root of the repository, since a relative path is used to install the `bricsauthenticator` package.
 
 ## Usage
 

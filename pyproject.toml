@@ -3,12 +3,12 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mappingauthenticator"
+name = "bricsauthenticator"
 dynamic = ["version"]
 authors = [
   { name="James C. Womack", email="J.C.Womack@bristol.ac.uk" },
 ]
-description = "JupyterHub `Authenticator` backed by a simple username:password mapping"
+description = "JupyterHub Authenticator for the BriCS JupyterHub service"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -36,11 +36,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/isambard-sc/mappingauthenticator"
+Homepage = "https://github.com/isambard-sc/bricsauthenticator"
 
 [tool.setuptools_scm]
 root = "."
-version_file = "src/mappingauthenticator/_version.py"
+version_file = "src/bricsauthenticator/_version.py"
 
 [tool.autoflake]
 remove-all-unused-imports = true

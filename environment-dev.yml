@@ -1,6 +1,6 @@
 # Editable development install of Python package using pip inside a Conda 
 # environment, with external dependencies met via conda-forge packages
-name: mappingauthenticator-devenv
+name: bricsauthenticator-devenv
 channels:
   - conda-forge
   - nodefaults

@@ -1,6 +1,6 @@
 import re
 
-from mappingauthenticator import __version__, __version_tuple__
+from bricsauthenticator import __version__, __version_tuple__
 
 
 def test_version() -> None:

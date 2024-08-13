@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-PROJECT_DIR := src/mappingauthenticator
+PROJECT_DIR := src/bricsauthenticator
 TEST_DIR := tests/
 
 FORMAT_FILES := ${PROJECT_DIR} ${TEST_DIR}
