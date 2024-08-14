@@ -38,6 +38,9 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/isambard-sc/bricsauthenticator"
 
+[project.entry-points.'jupyterhub.authenticators']
+brics = "bricsauthenticator:BricsAuthenticator"
+
 [tool.setuptools_scm]
 root = "."
 version_file = "src/bricsauthenticator/_version.py"
