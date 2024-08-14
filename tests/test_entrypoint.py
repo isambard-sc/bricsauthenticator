@@ -1,5 +1,7 @@
-from bricsauthenticator import BricsAuthenticator
 from importlib.metadata import entry_points
+
+from bricsauthenticator import BricsAuthenticator
+
 
 def test_entrypoint() -> None:
     """
@@ -12,12 +14,12 @@ def test_entrypoint() -> None:
 
     brics_entry_point = authenticator_entry_points["brics"]
 
-    assert brics_entry_point.value == "bricsauthenticator:BricsAuthenticator", '"brics" entry point should have expected value'
+    assert (
+        brics_entry_point.value == "bricsauthenticator:BricsAuthenticator"
+    ), '"brics" entry point should have expected value'
 
     brics_authenticator = brics_entry_point.load()
 
-    assert brics_authenticator is BricsAuthenticator, 'calling load() on entry point should load BricsAuthenticator class'
-
-
-
-    
+    assert (
+        brics_authenticator is BricsAuthenticator
+    ), "calling load() on entry point should load BricsAuthenticator class"

@@ -2,8 +2,9 @@
 JupyterHub `Authenticator` for the BriCS JupyterHub service
 """
 
-from tornado.web import HTTPError
 from jupyterhub.auth import Authenticator
+from tornado.web import HTTPError
+
 
 class BricsAuthenticator(Authenticator):
     """
@@ -17,4 +18,3 @@ class BricsAuthenticator(Authenticator):
         """
 
         raise HTTPError(status_code=418, log_message="Authenticator not implemented")
-
