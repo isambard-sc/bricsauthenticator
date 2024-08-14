@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "jupyterhub >= 5.0",
+    "tornado >= 5.1",  # version from jupyterhub 5.0's dependencies
 ]
 
 [project.optional-dependencies]
