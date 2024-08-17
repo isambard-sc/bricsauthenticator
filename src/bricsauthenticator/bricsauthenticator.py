@@ -17,6 +17,7 @@ class BricsLoginHandler(BaseHandler):
         if not token:
             raise web.HTTPError(401, "Missing X-Auth-Id-Token header")
 
+        # TODO Verify signature of JWT token
         try:
             # Decode the JWT token without verifying the signature
             decoded_token = jwt.decode(token, options={"verify_signature": False}, algorithms=["RS256"])
