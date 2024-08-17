@@ -4,10 +4,11 @@ JupyterHub `Authenticator` for the BriCS JupyterHub service
 
 import json
 
+import jwt
 from jupyterhub.auth import Authenticator
 from jupyterhub.handlers import BaseHandler
 from tornado import web
-import jwt
+
 
 class BricsLoginHandler(BaseHandler):
     async def get(self):
@@ -36,7 +37,7 @@ class BricsLoginHandler(BaseHandler):
             #  by inspecting the resources allocated to each project
 
             # Authenticate the user with JupyterHub
-            #user = self.user_from_username(username)
+            # user = self.user_from_username(username)
             user = await self.auth_to_user({"name": username, "auth_state": json.loads(projects)})
             self.set_login_cookie(user)
             next_url = self.get_next_url(user)
@@ -45,9 +46,10 @@ class BricsLoginHandler(BaseHandler):
         except jwt.InvalidTokenError as e:
             raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
 
+
 class BricsAuthenticator(Authenticator):
     def get_handlers(self, app):
-        return [(r'/login', BricsLoginHandler)]
+        return [(r"/login", BricsLoginHandler)]
 
     async def authenticate(self, *args, **kwargs):
         raise NotImplementedError("This method should not be called directly.")
