@@ -5,6 +5,7 @@ JupyterHub `Authenticator` for the BriCS JupyterHub service
 import json
 
 import jwt
+import requests
 from jupyterhub.auth import Authenticator
 from jupyterhub.handlers import BaseHandler
 from tornado import web
@@ -16,12 +17,22 @@ class BricsLoginHandler(BaseHandler):
         token = self.request.headers.get("X-Auth-Id-Token")
         if not token:
             raise web.HTTPError(401, "Missing X-Auth-Id-Token header")
+        
+        oidc_server = "https://keycloak.isambard.ac.uk/realms/isambard"  # Hard-code to ensure it's a place we trust
+        oidc_config = requests.get(f"https://{oidc_server}/.well-known/openid-configuration").json()
+        signing_algos = oidc_config["id_token_signing_alg_values_supported"]
 
-        # TODO Verify signature of JWT token
+        jwks_client = jwt.PyJWKClient(oidc_config["jwks_uri"])
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+
+        # Verify signature of JWT token
         try:
             # Decode the JWT token without verifying the signature
-            decoded_token = jwt.decode(token, options={"verify_signature": False}, algorithms=["RS256"])
-
+            decoded_token = jwt.decode(
+                token, 
+                key=signing_key.key,
+                algorithms=signing_algos,
+            )
             # Print all key-value pairs in the JWT token (optional for debugging)
             print("Decoded JWT Token:")
             for key, value in decoded_token.items():
@@ -46,7 +57,6 @@ class BricsLoginHandler(BaseHandler):
 
         except jwt.InvalidTokenError as e:
             raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
-
 
 class BricsAuthenticator(Authenticator):
     def get_handlers(self, app):
