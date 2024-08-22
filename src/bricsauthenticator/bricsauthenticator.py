@@ -39,7 +39,7 @@ class BricsLoginHandler(BaseHandler):
 
             # Authenticate the user with JupyterHub
             # user = self.user_from_username(username)
-            user = await self.auth_to_user({"name": username, "auth_state": json.loads(projects)})
+            user = await self.auth_to_user({"name": username, "auth_state": projects})
             self.set_login_cookie(user)
             next_url = self.get_next_url(user)
             self.redirect(next_url)
