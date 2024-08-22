@@ -21,7 +21,6 @@ dependencies = [
     "jupyterhub >= 5.0",
     "tornado >= 5.1",  # version from jupyterhub 5.0's dependencies
     "PyJWT >= 2.9",
-    "requests >= 2.32",
 ]
 
 [project.optional-dependencies]
