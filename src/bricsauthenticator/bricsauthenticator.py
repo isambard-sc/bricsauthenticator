@@ -17,6 +17,9 @@ class BricsLoginHandler(BaseHandler):
         token = self.request.headers.get("X-Auth-Id-Token")
         if not token:
             raise web.HTTPError(401, "Missing X-Auth-Id-Token header")
+
+        # Log raw JWT token prior to decoding (optional for debugging)
+        self.log.debug(f"Raw JWT Token: {token}")
         
         oidc_server = "https://keycloak.isambard.ac.uk/realms/isambard"  # Hard-code to ensure it's a place we trust
 
