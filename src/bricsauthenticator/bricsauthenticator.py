@@ -99,6 +99,7 @@ class BricsLoginHandler(BaseHandler):
 
 class BricsAuthenticator(Authenticator):
     def get_handlers(self, app):
+        # TODO Dynamically set oidc_server value based on BricsAuthenticator configuration value
         return [(r"/login", BricsLoginHandler, {"oidc_server": "https://keycloak-dev.isambard.ac.uk/realms/isambard"})]
 
     async def authenticate(self, *args, **kwargs):
