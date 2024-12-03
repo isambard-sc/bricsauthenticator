@@ -80,7 +80,7 @@ class BricsLoginHandler(BaseHandler):
             # JSON object and may return the claim as a string. To ensure
             # consistent internal representation of the projects claim, attempt
             # to decode the claim, and if this fails (as expected for an
-            # already-decoded claim), use the non-decoded claim.
+            # already-decoded claim), use the claim as-is.
             projects = decoded_token.get("projects")
             self.log.debug(f"projects claim is of type {type(projects)}")
             try:
