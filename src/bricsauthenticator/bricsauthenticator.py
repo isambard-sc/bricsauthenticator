@@ -9,6 +9,7 @@ from jupyterhub.auth import Authenticator
 from jupyterhub.handlers import BaseHandler
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
+from traitlets import Unicode
 
 
 class BricsLoginHandler(BaseHandler):
@@ -30,6 +31,8 @@ class BricsLoginHandler(BaseHandler):
 
         http_client = AsyncHTTPClient()
         try:
+            # Log OIDC server request (optional for debugging)
+            self.log.debug(f"Requesting OIDC server configuration from {self.oidc_server}")
             response = await http_client.fetch(request=f"{self.oidc_server}/.well-known/openid-configuration", method="GET")
         except Exception as e:
             self.log.exception(f"Encountered exception when fetching OIDC server config")
@@ -98,9 +101,11 @@ class BricsLoginHandler(BaseHandler):
 
 
 class BricsAuthenticator(Authenticator):
+
+    oidc_server = Unicode(default_value="https://keycloak.isambard.ac.uk/realms/isambard", help="URL for OIDC server used to validate received token", allow_none=False).tag(config=True)
+
     def get_handlers(self, app):
-        # TODO Dynamically set oidc_server value based on BricsAuthenticator configuration value
-        return [(r"/login", BricsLoginHandler, {"oidc_server": "https://keycloak-dev.isambard.ac.uk/realms/isambard"})]
+        return [(r"/login", BricsLoginHandler, {"oidc_server": self.oidc_server})]
 
     async def authenticate(self, *args, **kwargs):
         raise NotImplementedError("This method should not be called directly.")
