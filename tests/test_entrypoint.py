@@ -5,12 +5,25 @@ import pytest
 
 from bricsauthenticator import BricsAuthenticator, BricsSlurmSpawner
 
+
 @pytest.mark.parametrize(
-        "ep_name, ep_value, ep_group, ep_loaded",
-        [
-            pytest.param("brics", "bricsauthenticator:BricsAuthenticator", "jupyterhub.authenticators", BricsAuthenticator, id="jupyterhub.authenticators"),
-            pytest.param("brics", "bricsauthenticator:BricsSlurmSpawner", "jupyterhub.spawners", BricsSlurmSpawner, id="jupyterhub.spawners"),
-        ]
+    "ep_name, ep_value, ep_group, ep_loaded",
+    [
+        pytest.param(
+            "brics",
+            "bricsauthenticator:BricsAuthenticator",
+            "jupyterhub.authenticators",
+            BricsAuthenticator,
+            id="jupyterhub.authenticators",
+        ),
+        pytest.param(
+            "brics",
+            "bricsauthenticator:BricsSlurmSpawner",
+            "jupyterhub.spawners",
+            BricsSlurmSpawner,
+            id="jupyterhub.spawners",
+        ),
+    ],
 )
 def test_entrypoint(ep_name: str, ep_value: str, ep_group: str, ep_loaded: Any) -> None:
     """
@@ -23,12 +36,8 @@ def test_entrypoint(ep_name: str, ep_value: str, ep_group: str, ep_loaded: Any) 
 
     entry_point = group_entry_points[ep_name]
 
-    assert (
-        entry_point.value == ep_value
-    ), f'"{ep_name}" entry point should have expected value "{ep_value}"'
+    assert entry_point.value == ep_value, f'"{ep_name}" entry point should have expected value "{ep_value}"'
 
     load_result = entry_point.load()
 
-    assert (
-        load_result is ep_loaded
-    ), "calling load() on entry point should load BricsAuthenticator class"
+    assert load_result is ep_loaded, "calling load() on entry point should load BricsAuthenticator class"
