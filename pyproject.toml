@@ -22,6 +22,7 @@ dependencies = [
     "tornado >= 5.1",     # version from jupyterhub 5.0's dependencies
     "traitlets >= 4.3.2", # version from jupyterhub 5.0's dependencies
     "PyJWT >= 2.9",
+    "batchspawner >= 1.3.0"
 ]
 
 [project.optional-dependencies]
@@ -43,6 +44,9 @@ Homepage = "https://github.com/isambard-sc/bricsauthenticator"
 
 [project.entry-points.'jupyterhub.authenticators']
 brics = "bricsauthenticator:BricsAuthenticator"
+
+[project.entry-points.'jupyterhub.spawners']
+brics = "bricsauthenticator:BricsSlurmSpawner"
 
 [tool.setuptools_scm]
 root = "."

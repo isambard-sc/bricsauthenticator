@@ -1,3 +1,3 @@
 from ._version import __version__, __version_tuple__
-from .authenticator import BricsAuthenticator
+from .auth import BricsAuthenticator
 from .spawner import BricsSlurmSpawner
