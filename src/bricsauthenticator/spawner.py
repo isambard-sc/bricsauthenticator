@@ -9,6 +9,7 @@ from typing import Callable
 
 import batchspawner
 from traitlets import default
+from tornado import web
 
 
 def defuse(input_to_defuse: str) -> str:
