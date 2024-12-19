@@ -39,7 +39,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         return auth_state_hook
 
     @default("options_form")
-    def _options_form_default(self):
+    def _options_form_default(self) -> Callable:
         """
         Return a function to generate HTML options form for user to configure spawned session
 
@@ -55,7 +55,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         return spawner_options_form
 
     @default("options_from_form")
-    def _options_from_form_default(self):
+    def _options_from_form_default(self) -> Callable:
         """
         Return a function to interpret and validate HTTP form data from the :class:`Spawner` options page
 
