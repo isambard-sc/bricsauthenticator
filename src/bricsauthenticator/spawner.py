@@ -6,7 +6,7 @@ from typing import Callable
 
 import batchspawner
 from tornado import web
-from traitlets import default, Dict, List, Unicode
+from traitlets import Dict, List, Unicode, default
 
 from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
 
@@ -16,7 +16,15 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     BriCS-specific specialisation of :class:`SlurmSpawner`
     """
 
-    brics_projects = Dict(value_trait=List(trait=Unicode()), key_trait=Unicode(), help="Dictionary mapping BriCS project names to lists of associated BriCS infrastructures. Should be set by Authenticator via Spawner.auth_state_hook()")
+    brics_projects = Dict(
+        value_trait=List(trait=Unicode()),
+        key_trait=Unicode(),
+        help="""
+        Dictionary mapping BriCS project names to lists of associated BriCS infrastructures.
+        
+        Should be set by Authenticator via Spawner.auth_state_hook()
+        """,
+    )
 
     @default("auth_state_hook")
     def _auth_state_hook_default(self) -> Callable:
