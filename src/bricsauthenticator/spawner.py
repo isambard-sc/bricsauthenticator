@@ -5,10 +5,10 @@ JupyterHub `Spawner` for the BriCS JupyterHub service
 from typing import Callable
 
 import batchspawner
-from traitlets import default
 from tornado import web
+from traitlets import default
 
-from bricsauthenticator.spawner_options_form import make_options_form, interpret_form_data
+from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
 
 
 class BricsSlurmSpawner(batchspawner.SlurmSpawner):

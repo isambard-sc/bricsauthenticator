@@ -1,9 +1,12 @@
 import pytest
+
 from bricsauthenticator.spawner_options_form import defuse, interpret_form_data
+
 
 class TestMakeOptionsForm:
     # TODO Implement tests for make_options_form
     pass
+
 
 class TestDefuse:
     @pytest.mark.parametrize(
@@ -21,11 +24,12 @@ class TestDefuse:
             (r"my\ project", r"'my\ project'"),
             ("project100", "project100"),
             ("$project100", "'$project100'"),
-        ]
+        ],
     )
     def test_defuse(self, input_to_defuse, defused_output):
         result = defuse(input_to_defuse)
         assert result == defused_output
+
 
 class TestInterpretFormData:
 
@@ -35,7 +39,7 @@ class TestInterpretFormData:
 
     @pytest.mark.parametrize(
         "form_data",
-        [ 
+        [
             {
                 "brics_project": ["valid_project"],
                 "runtime": ["01:00:00"],
@@ -63,8 +67,8 @@ class TestInterpretFormData:
                 "ngpus": ["4"],
                 "partition": ["VALID_partition"],
                 "reservation": ["VALID_reservation"],
-            }
-        ]
+            },
+        ],
     )
     def test_valid_input(self, valid_projects, form_data):
 
@@ -75,11 +79,7 @@ class TestInterpretFormData:
         assert result["partition"] == form_data["partition"][0]
         assert result["reservation"] == form_data["reservation"][0]
 
-
-    @pytest.mark.parametrize(
-            "project",
-            ["unknown_project", "unknown-project", "unknownproject1"]
-    )
+    @pytest.mark.parametrize("project", ["unknown_project", "unknown-project", "unknownproject1"])
     def test_invalid_brics_project(self, valid_projects, project):
         form_data = {
             "brics_project": [project],
@@ -91,13 +91,13 @@ class TestInterpretFormData:
             interpret_form_data(form_data, valid_projects)
 
     @pytest.mark.parametrize(
-            "project",
-            [
-                pytest.param("invalid project", id="with space"),
-                pytest.param("invalid_project!", id="with !"),
-                pytest.param("1invalid_project", id="first char is number"),
-                pytest.param("invalidProject", id="with capital letter"),
-            ]
+        "project",
+        [
+            pytest.param("invalid project", id="with space"),
+            pytest.param("invalid_project!", id="with !"),
+            pytest.param("1invalid_project", id="first char is number"),
+            pytest.param("invalidProject", id="with capital letter"),
+        ],
     )
     def test_invalid_brics_project_format(self, valid_projects, project):
         form_data = {
@@ -109,15 +109,14 @@ class TestInterpretFormData:
         with pytest.raises(ValueError, match="brics_project not valid"):
             interpret_form_data(form_data, valid_projects)
 
-
     @pytest.mark.parametrize(
-            "runtime",
-            [
-                pytest.param("25:00:00", id="invalid time specification"),
-                pytest.param("25 00 00", id="with space"),
-                pytest.param("25:00:00!", id="with !"),
-                pytest.param("25_00_00", id="_ instead of : "),
-            ]
+        "runtime",
+        [
+            pytest.param("25:00:00", id="invalid time specification"),
+            pytest.param("25 00 00", id="with space"),
+            pytest.param("25:00:00!", id="with !"),
+            pytest.param("25_00_00", id="_ instead of : "),
+        ],
     )
     def test_invalid_runtime(self, valid_projects, runtime):
         form_data = {
@@ -130,12 +129,12 @@ class TestInterpretFormData:
             interpret_form_data(form_data, valid_projects)
 
     @pytest.mark.parametrize(
-            "ngpus",
-            [
-                pytest.param("10", id="invalid GPU count"),
-                pytest.param("1 0", id="with space"),
-                pytest.param("1-", id="with dash"),
-            ]
+        "ngpus",
+        [
+            pytest.param("10", id="invalid GPU count"),
+            pytest.param("1 0", id="with space"),
+            pytest.param("1-", id="with dash"),
+        ],
     )
     def test_invalid_ngpus(self, valid_projects, ngpus):
         form_data = {
@@ -148,11 +147,11 @@ class TestInterpretFormData:
             interpret_form_data(form_data, valid_projects)
 
     @pytest.mark.parametrize(
-            "partition",
-            [
-                pytest.param("invalid partition", id="with space"),
-                pytest.param("invalid_partition!", id="with !"),
-            ]
+        "partition",
+        [
+            pytest.param("invalid partition", id="with space"),
+            pytest.param("invalid_partition!", id="with !"),
+        ],
     )
     def test_invalid_partition_format(self, valid_projects, partition):
         form_data = {
@@ -166,11 +165,11 @@ class TestInterpretFormData:
             interpret_form_data(form_data, valid_projects)
 
     @pytest.mark.parametrize(
-            "reservation",
-            [
-                pytest.param("invalid reservation", id="with space"),
-                pytest.param("invalid_reservation!", id="with !"),
-            ]
+        "reservation",
+        [
+            pytest.param("invalid reservation", id="with space"),
+            pytest.param("invalid_reservation!", id="with !"),
+        ],
     )
     def test_invalid_reservation_format(self, valid_projects, reservation):
         form_data = {
@@ -195,7 +194,7 @@ class TestInterpretFormData:
         result = interpret_form_data(form_data, valid_projects)
         assert result["brics_project"] == "valid_project"
         assert result["runtime"] == "01:00:00"
-        assert result["ngpus"] == '1'
+        assert result["ngpus"] == "1"
         assert result["partition"] is None
         assert result["reservation"] is None
 
@@ -209,11 +208,10 @@ class TestInterpretFormData:
 
         result = interpret_form_data(form_data, valid_projects)
         assert result["brics_project"] == "valid_project"
-        assert result["runtime"] == '01:00:00'
-        assert result["ngpus"] == '1'
+        assert result["runtime"] == "01:00:00"
+        assert result["ngpus"] == "1"
         assert result["partition"] is None
         assert result["reservation"] is None
-
 
     def test_invalid_form_data_unknown_key(self, valid_projects):
         form_data = {
@@ -222,12 +220,11 @@ class TestInterpretFormData:
             "ngpus": ["1"],
             "partition": [""],
             "reservation": [""],
-            "invalid_key": ["data"]
+            "invalid_key": ["data"],
         }
 
         with pytest.raises(ValueError, match="unknown form data keys"):
             _ = interpret_form_data(form_data, valid_projects)
-
 
     def test_edge_case_empty_form(self, valid_projects):
         form_data = {
@@ -244,10 +241,10 @@ class TestInterpretFormData:
     def test_invalid_regex_patterns(self, valid_projects):
         form_data = {
             "brics_project": ["valid_project"],  # This one is valid
-            "runtime": ["InvalidTimeFormat"],   # Invalid time format
-            "ngpus": ["NotANumber"],            # Not a valid GPU count
-            "partition": ["Invalid Partition!"], # Invalid partition format
-            "reservation": ["Invalid Reservation!"], # Invalid reservation format
+            "runtime": ["InvalidTimeFormat"],  # Invalid time format
+            "ngpus": ["NotANumber"],  # Not a valid GPU count
+            "partition": ["Invalid Partition!"],  # Invalid partition format
+            "reservation": ["Invalid Reservation!"],  # Invalid reservation format
         }
 
         with pytest.raises(ValueError):

@@ -6,6 +6,7 @@ import re
 import shlex
 from datetime import datetime
 
+
 def make_options_form(project_list: list[str]) -> str:
     """
     Return a HTML options form for user to configure spawned session
@@ -25,25 +26,20 @@ def make_options_form(project_list: list[str]) -> str:
 
     # TODO Restrict list of selectable projects to those with access to Jupyter resources
     project_options = [f'<option value="{project}">{project}</option>' for project in project_list]
-    project_select = (
-        f'<label style="{label_style}" for="brics_project_select">Choose a project:</label>'
-        + "\n".join(
-            ['<select name="brics_project" id="brics_project_select">'] + project_options + ["</select>"]
-        )
+    project_select = f'<label style="{label_style}" for="brics_project_select">Choose a project:</label>' + "\n".join(
+        ['<select name="brics_project" id="brics_project_select">'] + project_options + ["</select>"]
     )
 
     runtime_list = [("01:00:00", "1h"), ("02:00:00", "2h"), ("04:00:00", "4h"), ("08:00:00", "8h")]
     runtime_options = [f'<option value="{value}">{label}</option>' for value, label in runtime_list]
-    runtime_select = (
-        f'<label style="{label_style}" for="runtime_select">Select job duration:</label>'
-        + "\n".join(['<select name="runtime" id="runtime_select">'] + runtime_options + ["</select>"])
+    runtime_select = f'<label style="{label_style}" for="runtime_select">Select job duration:</label>' + "\n".join(
+        ['<select name="runtime" id="runtime_select">'] + runtime_options + ["</select>"]
     )
 
     ngpus_list = list(range(1, 5))
     ngpus_options = [f'<option value="{ngpus}">{ngpus}</option>' for ngpus in ngpus_list]
-    ngpus_select = (
-        f'<label style="{label_style}"for="ngpus_select">Select number of GH200s:</label>'
-        + "\n".join(['<select name="ngpus" id="ngpus_select">'] + ngpus_options + ["</select>"])
+    ngpus_select = f'<label style="{label_style}"for="ngpus_select">Select number of GH200s:</label>' + "\n".join(
+        ['<select name="ngpus" id="ngpus_select">'] + ngpus_options + ["</select>"]
     )
 
     partition_default = ""
