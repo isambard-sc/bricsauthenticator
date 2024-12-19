@@ -2,9 +2,13 @@
 pytest tests/test_validate_and_defuse.py
 """
 import pytest
-from bricsauthenticator.spawner import defuse
+from bricsauthenticator.spawner_options_form import defuse, interpret_form_data
 
-class TestValidateAndDefuse:
+class TestMakeOptionsForm:
+    # TODO Implement tests for make_options_form
+    pass
+
+class TestDefuse:
     @pytest.mark.parametrize(
         "input_to_defuse, defused_output",
         [
