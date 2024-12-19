@@ -7,6 +7,18 @@ import shlex
 from datetime import datetime
 
 def make_options_form(project_list: list[str]) -> str:
+    """
+    Return a HTML options form for user to configure spawned session
+
+    To be interpreted by :func:`interpret_form_data`. The surrounding `<form>`
+    element and submit button are not included, as are added when this function
+    is called by the JupyterHub :class:`Spawner`.
+
+    :param project_list: list of selectable projects, typically provided by
+      :class:`Spawner` instance
+    :return: HTML form with user-selectable JupyterHub spawner options
+    """
+
     # Use inline styling to make all control labels the same width
     # This causes form controls to be horizontally aligned
     label_style = "display:inline-block;width:16em;text-align:left"
