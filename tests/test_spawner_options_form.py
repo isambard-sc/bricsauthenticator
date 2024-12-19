@@ -1,6 +1,3 @@
-"""
-pytest tests/test_validate_and_defuse.py
-"""
 import pytest
 from bricsauthenticator.spawner_options_form import defuse, interpret_form_data
 
@@ -217,20 +214,6 @@ class TestInterpretFormData:
         assert result["partition"] is None
         assert result["reservation"] is None
 
-    def test_all_valid_without_optional_fields(self, valid_projects):
-        form_data = {
-            "brics_project": ["valid_project"],
-            "runtime": ["01:00:00"],
-            "ngpus": ["1"],
-            # No optional fields (partition and reservation)
-        }
-
-        result = interpret_form_data(form_data, valid_projects)
-        assert result["brics_project"] == "valid_project"
-        assert result["runtime"] == '01:00:00'
-        assert result["ngpus"] == '1'
-        assert result["partition"] is None
-        assert result["reservation"] is None
 
     def test_invalid_form_data_unknown_key(self, valid_projects):
         form_data = {
