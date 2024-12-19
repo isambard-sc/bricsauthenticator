@@ -50,7 +50,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         self.log.debug("Entering BricsSlurmSpawner._options_form_default")
 
         def spawner_options_form(spawner):
-            return make_options_form(project_list=list(self.brics_projects.keys()))
+            return make_options_form(project_list=list(spawner.brics_projects.keys()))
 
         return spawner_options_form
 
