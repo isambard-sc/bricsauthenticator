@@ -6,7 +6,7 @@ from typing import Callable
 
 import batchspawner
 from tornado import web
-from traitlets import default
+from traitlets import default, Dict, List, Unicode
 
 from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
 
@@ -15,6 +15,8 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     """
     BriCS-specific specialisation of :class:`SlurmSpawner`
     """
+
+    brics_projects = Dict(value_trait=List(trait=Unicode()), key_trait=Unicode(), help="Dictionary mapping BriCS project names to lists of associated BriCS infrastructures. Should be set by Authenticator via Spawner.auth_state_hook()")
 
     @default("auth_state_hook")
     def _auth_state_hook_default(self) -> Callable:
@@ -32,7 +34,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
                 spawner.log.debug(f"Acquired auth_state: {str(auth_state)}")
                 spawner.brics_projects = auth_state
             else:
-                spawner.log.debug(f"No auth_state acquired")
+                spawner.log.debug("No auth_state acquired")
                 spawner.brics_projects = {}
             spawner.log.debug(f"BriCS projects: {self.brics_projects.keys()}")
 
