@@ -10,9 +10,9 @@ def make_options_form(project_list: list[str]) -> str:
     """
     Return a HTML options form for user to configure spawned session
 
-    To be interpreted by :func:`interpret_form_data`. The surrounding `<form>`
-    element and submit button are not included, as are added when this function
-    is called by the JupyterHub :class:`Spawner`.
+    Submitted form data is to be processed by :func:`interpret_form_data`. The
+    surrounding `<form>` element and submit button are not included, as are
+    added when this function is called by JupyterHub.
 
     :param project_list: list of selectable projects, typically provided by
       :class:`Spawner` instance
