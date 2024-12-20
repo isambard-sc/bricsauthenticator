@@ -1,6 +1,6 @@
 # bricsauthenticator
 
-JupyterHub `Authenticator` for the BriCS JupyterHub service
+JupyterHub `Authenticator` and `Spawner` for the BriCS JupyterHub service
 
 ## Install
 
