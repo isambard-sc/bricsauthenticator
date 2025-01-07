@@ -13,5 +13,8 @@
       "requireLocalPort": true
     }
   },
-  "postCreateCommand": "python3 -m pip install --no-cache-dir --root-user-action=ignore --editable '${containerWorkspaceFolder}[dev]'"
+  "postCreateCommand": "python3 -m pip install --no-cache-dir --root-user-action=ignore --editable '${containerWorkspaceFolder}[dev]'",
+  
+  // Disable labelling to avoid access issues with bind-mounting workspace folder for hosts using SELinux
+  "securityOpt": ["label=disable"]
 }
