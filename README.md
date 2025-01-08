@@ -115,7 +115,7 @@ The dev environment can be launched using [dev-container-compatible tooling][too
 Within the container image JupyterHub is preinstalled as a `pip` package. On container creation, an editable `pip` install of `bricsauthenticator` with development dependencies is performed (from the local copy of the source code bind-mounted into the container). This allows development and testing of the source code within the running dev container.
 
 [containers.dev]: https://containers.dev/
-[metadata-ref-containers.dev]: https://containers.dev/implementors/json_reference/]
+[metadata-ref-containers.dev]: https://containers.dev/implementors/json_reference/
 [jupyterhub-docker-quay.io]: https://quay.io/repository/jupyterhub/jupyterhub
 [tooling-containers.dev]: https://containers.dev/supporting
 [dev-containers-vscode-ext]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
