@@ -1,0 +1,17 @@
+# Use the same base image as used to build the brics_jupyterhub container image
+# See https://github.com/isambard-sc/brics_jupyterhub_envs/blob/main/brics_jupyterhub/Containerfile
+FROM quay.io/jupyterhub/jupyterhub:latest
+
+# Remove timezone information, if present (default to UTC)
+RUN rm -f /etc/localtime /etc/timezone
+
+# Install packages from distribution repos
+RUN <<EOF
+apt-get update && apt-get install --assume-yes --no-install-recommends \
+  git \
+  vim \
+  less \
+  make
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+EOF
