@@ -105,7 +105,7 @@ conda env create -f environment-dev.yml
 A [dev container][containers.dev] [metadata JSON file][metadata-ref-containers.dev] ([devcontainer.json](./.devcontainer/devcontainer.json)) is provided that defines a `bricsauthenticator` development environment with the following characteristics
 
 * [Official JupyterHub Docker image][jupyterhub-docker-quay.io] as base image
-* Development tooling installed in base image via accompanying `Containerfile`
+* Development tooling installed in base image via accompanying [Containerfile](./.devcontainer/Containerfile)
 * Run as root inside container
 * Forward port 8000 (the default listening port for JupyterHub's public proxy)
 * Editable pip install of source code in local workspace
