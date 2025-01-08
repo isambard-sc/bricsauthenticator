@@ -100,6 +100,27 @@ conda env create -f environment-dev.yml
 > [!NOTE]
 > This must be run from the root of the repository, since a relative path is used to install the `bricsauthenticator` package.
 
+## Dev container
+
+A [dev container][containers.dev] [metadata JSON file][metadata-ref-containers.dev] is provided that defines a `bricsauthenticator` development environment with the following characteristics
+
+* [Official JupyterHub Docker image][jupyterhub-docker-quay.io] as base image
+* Development tooling installed in base image via accompanying `Containerfile`
+* Run as root inside container
+* Forward port 8000 (the default listening port for JupyterHub's public proxy)
+* Editable pip install of source code in local workspace
+
+The dev environment can be launched using [dev-container-compatible tooling][tooling-containers.dev], e.g. VSCode (with [Dev Containers extension][dev-containers-vscode-ext]) and [GitHub Codespaces][dev-containers-github-codespaces-docs].
+
+Within the container image JupyterHub is preinstalled as a `pip` package. On container creation, an editable `pip` install of `bricsauthenticator` with development dependencies is performed (from the local copy of the source code bind-mounted into the container). This allows development and testing of the source code within the running dev container.
+
+[containers.dev]: https://containers.dev/
+[metadata-ref-containers.dev]: https://containers.dev/implementors/json_reference/]
+[jupyterhub-docker-quay.io]: https://quay.io/repository/jupyterhub/jupyterhub
+[tooling-containers.dev]: https://containers.dev/supporting
+[dev-containers-vscode-ext]: https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers
+[dev-containers-github-codespaces-docs]: https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/introduction-to-dev-containers
+
 ## Usage
 
 <!-- TODO -->
@@ -110,7 +131,7 @@ conda env create -f environment-dev.yml
 
 ## Development
 
-It is recommended to develop in a virtual environment, with [an editable install of the package, and development tools installed](#install-with-development-dependencies).
+It is recommended to develop in a virtual environment, with [an editable install of the package, and development tools installed](#install-with-development-dependencies). The [dev container](#dev-container) automatically performs an editable development install of the package on container creation.
 
 ### Documentation
   
