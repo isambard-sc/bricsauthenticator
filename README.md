@@ -102,7 +102,7 @@ conda env create -f environment-dev.yml
 
 ## Dev container
 
-A [dev container][containers.dev] [metadata JSON file][metadata-ref-containers.dev] is provided that defines a `bricsauthenticator` development environment with the following characteristics
+A [dev container][containers.dev] [metadata JSON file][metadata-ref-containers.dev] ([devcontainer.json](./.devcontainer/devcontainer.json)) is provided that defines a `bricsauthenticator` development environment with the following characteristics
 
 * [Official JupyterHub Docker image][jupyterhub-docker-quay.io] as base image
 * Development tooling installed in base image via accompanying `Containerfile`
