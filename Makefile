@@ -38,4 +38,4 @@ test:
 .PHONY: coverage
 
 coverage:
-	pytest --cov=bricsauthenticator --cov-report=term-missing tests/
+	pytest --cov=bricsauthenticator --cov-report=term-missing --cov-report=html tests/
