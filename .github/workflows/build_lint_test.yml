@@ -2,9 +2,9 @@ name: "Python package: build, lint, and test"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "tests" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "tests" ]
   workflow_dispatch:
 
 permissions: {}
@@ -50,3 +50,14 @@ jobs:
       if: ${{ always() && steps.install.conclusion == 'success' }}
       run: |
         make test
+
+    - name: Test (with coverage)
+      if: ${{ always() && steps.install.conclusion == 'success' }}
+      run: |
+        make coverage
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov

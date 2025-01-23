@@ -17,6 +17,7 @@ help:
 	@echo "  make format"
 	@echo "  make lint"
 	@echo "  make test"
+	@echo "  make coverage"
 
 .PHONY: format
 format:
@@ -33,3 +34,8 @@ lint:
 .PHONY: test
 test:
 	${pytest} ${TEST_DIR}
+
+.PHONY: coverage
+
+coverage:
+	pytest --cov=bricsauthenticator --cov-report=term-missing tests/
