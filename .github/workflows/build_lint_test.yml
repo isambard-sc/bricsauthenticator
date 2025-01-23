@@ -65,6 +65,7 @@ jobs:
         path: htmlcov
 
     - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.12'
       uses: codecov/codecov-action@v3
       with:
         files: coverage.xml
