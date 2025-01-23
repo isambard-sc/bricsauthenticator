@@ -1,6 +1,6 @@
 # bricsauthenticator
 
-[![codecov](https://codecov.io/gh/owhere/bricsauthenticator/graph/badge.svg?token=3IGKBYAIS1)](https://codecov.io/gh/owhere/bricsauthenticator)
+[![codecov](https://codecov.io/gh/owhere/bricsauthenticator/branch/tests/graph/badge.svg?token=3IGKBYAIS1)](https://codecov.io/gh/owhere/bricsauthenticator)
 
 JupyterHub `Authenticator` and `Spawner` for the BriCS JupyterHub service
 
