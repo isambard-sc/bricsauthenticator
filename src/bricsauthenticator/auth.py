@@ -11,6 +11,7 @@ from tornado import web
 from tornado.httpclient import AsyncHTTPClient
 from traitlets import Unicode
 
+
 class BricsLoginHandler(BaseHandler):
     def initialize(self, oidc_server: str, http_client=None, jwks_client_factory=None):
         self.oidc_server = oidc_server
@@ -51,9 +52,7 @@ class BricsLoginHandler(BaseHandler):
     async def _fetch_oidc_config(self) -> dict:
         try:
             self.log.debug(f"Requesting OIDC config from {self.oidc_server}")
-            response = await self.http_client.fetch(
-                f"{self.oidc_server}/.well-known/openid-configuration"
-            )
+            response = await self.http_client.fetch(f"{self.oidc_server}/.well-known/openid-configuration")
             return json.loads(response.body)
         except Exception as e:
             self.log.exception("Failed to fetch OIDC config")
@@ -98,6 +97,7 @@ class BricsLoginHandler(BaseHandler):
             # If it's already a dict or an invalid string
             self.log.debug(f"Skipping JSON decode of projects claim: {projects}")
             return projects
+
 
 class BricsAuthenticator(Authenticator):
 
