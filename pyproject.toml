@@ -78,3 +78,4 @@ addopts = [
 ]
 tmp_path_retention_count = 3
 tmp_path_retention_policy = "all"
+asyncio_default_fixture_loop_scope = "function"
