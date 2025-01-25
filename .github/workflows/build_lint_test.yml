@@ -40,7 +40,7 @@ jobs:
       id: install
       run: |
         python -m pip install "${GITHUB_WORKSPACE}[dev]"
-        python -m pip install pytest-cov
+        python -m pip install pytest-cov pytest-asyncio
 
     - name: Lint
       if: ${{ always() && steps.install.conclusion == 'success' }}
@@ -78,4 +78,7 @@ jobs:
       with:
         name: ccoverage-report-${{ github.run_id }} 
         path: coverage.xml
+
+    - name: Debug source directory
+      run: ls -R src
         
