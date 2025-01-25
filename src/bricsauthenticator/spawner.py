@@ -8,8 +8,6 @@ import batchspawner
 from tornado import web
 from traitlets import Dict, List, Unicode, default
 
-from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
-
 
 class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     """
@@ -26,16 +24,10 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         """,
     )
 
-    def __init__(
-        self, 
-        interpret_form_data_fn: Callable = None, 
-        make_options_form_fn: Callable = None,
-        **kwargs
-    ):
+    def __init__(self, interpret_form_data_fn: Callable = None, make_options_form_fn: Callable = None, **kwargs):
         super().__init__(**kwargs)
         self.interpret_form_data_fn = interpret_form_data_fn
         self.make_options_form_fn = make_options_form_fn
-
 
     @default("auth_state_hook")
     def _auth_state_hook_default(self) -> Callable:
