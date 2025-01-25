@@ -2,4 +2,7 @@ coverage:
   status:
     project:
       default:
-        target: 85  # Set your desired threshold for the green badge (e.g., 90%)
+        target: 85  
+  color: 
+    green: 85  
+    yellow: 70  
