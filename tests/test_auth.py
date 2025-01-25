@@ -6,6 +6,7 @@ from tornado.httputil import HTTPServerRequest
 from tornado.web import Application, HTTPError
 
 from bricsauthenticator.auth import BricsLoginHandler
+from bricsauthenticator.auth import BricsAuthenticator 
 
 
 @pytest.fixture
@@ -123,3 +124,60 @@ def test_normalize_projects_none(handler):
     decoded_token = {}
     result = handler._normalize_projects(decoded_token)
     assert result == {}
+
+@pytest.mark.asyncio
+async def test_get():
+    # Create a real Application instance with necessary settings
+    application = Application()
+    application.settings = {
+        'hub': MagicMock(base_url="/hub/"),  # Mock 'hub' with base_url as a string
+        'cookie_secret': b'secret',  # Add other required settings
+    }
+    
+    # Mock request with a connection attribute
+    request = MagicMock(spec=HTTPServerRequest)
+    request.connection = MagicMock()  # Add the 'connection' attribute
+
+    # Create an instance of the handler
+    handler = BricsLoginHandler(application, request, oidc_server="https://example.com")
+
+    # Mock handler dependencies
+    handler._extract_token = MagicMock(return_value="mock_token")
+    handler._fetch_oidc_config = AsyncMock(return_value={"id_token_signing_alg_values_supported": ["RS256"], "jwks_uri": "https://example.com/jwks"})
+    handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
+    handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
+    handler._decode_jwt = MagicMock(return_value={"short_name": "test_user", "projects": {}})
+    handler._normalize_projects = MagicMock(return_value={"project1": "value1"})
+    handler.auth_to_user = AsyncMock(return_value={"name": "test_user"})
+    handler.set_login_cookie = MagicMock()
+    handler.get_next_url = MagicMock(return_value="/home")
+    handler.redirect = MagicMock()
+
+    # Call the actual `get` method
+    await handler.get()
+
+    # Assertions
+    handler._extract_token.assert_called_once()
+    handler._fetch_oidc_config.assert_called_once()
+    handler._parse_oidc_config.assert_called_once_with({"id_token_signing_alg_values_supported": ["RS256"], "jwks_uri": "https://example.com/jwks"})
+    handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
+    handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
+    handler._normalize_projects.assert_called_once_with({"short_name": "test_user", "projects": {}})
+    handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": {"project1": "value1"}})
+    handler.set_login_cookie.assert_called_once_with({"name": "test_user"})
+    handler.redirect.assert_called_once_with("/home")
+
+def test_get_handlers():
+    # Create an instance of BricsAuthenticator
+    authenticator = BricsAuthenticator()
+
+    # Mock the app object
+    app = MagicMock()
+
+    # Call get_handlers and assert the result
+    handlers = authenticator.get_handlers(app)
+    assert len(handlers) == 1
+    assert handlers[0][0] == r"/login"
+    assert handlers[0][1] == BricsLoginHandler
+    assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
+    
