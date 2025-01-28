@@ -25,7 +25,12 @@ def make_options_form(project_list: list[str]) -> str:
     label_style = "display:inline-block;width:16em;text-align:left"
 
     # TODO Restrict list of selectable projects to those with access to Jupyter resources
-    project_options = [f'<option value="{project}">{project}</option>' for project in project_list]
+    # Handle empty project list
+    if not project_list:
+        project_options = ['<option value="" disabled>No projects available</option>']
+    else:
+        project_options = [f'<option value="{project}">{project}</option>' for project in project_list]
+
     project_select = f'<label style="{label_style}" for="brics_project_select">Choose a project:</label>' + "\n".join(
         ['<select name="brics_project" id="brics_project_select">'] + project_options + ["</select>"]
     )

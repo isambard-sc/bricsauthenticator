@@ -1,6 +1,6 @@
 import pytest
 
-from bricsauthenticator.spawner_options_form import defuse, interpret_form_data
+from bricsauthenticator.spawner_options_form import defuse, interpret_form_data, make_options_form
 
 
 class TestMakeOptionsForm:
@@ -249,3 +249,40 @@ class TestInterpretFormData:
 
         with pytest.raises(ValueError):
             interpret_form_data(form_data, valid_projects)
+
+    def test_make_options_form_basic(self):
+        """
+        Test the make_options_form function with a basic project list.
+        """
+        project_list = ["project1", "project2", "project3"]
+        html_output = make_options_form(project_list)
+
+        for project in project_list:
+            assert f'<option value="{project}">{project}</option>' in html_output
+
+        assert '<select name="brics_project" id="brics_project_select">' in html_output
+        assert '<select name="runtime" id="runtime_select">' in html_output
+        assert '<select name="ngpus" id="ngpus_select">' in html_output
+
+    def test_make_options_form_empty_project_list(self):
+        """
+        Test the make_options_form function with an empty project list.
+        """
+        project_list = []
+        html_output = make_options_form(project_list)
+
+        # Check for the placeholder option
+        assert '<option value="" disabled>No projects available</option>' in html_output
+
+        # Ensure the select element still exists
+        assert '<select name="brics_project" id="brics_project_select">' in html_output
+
+    def test_make_options_form_special_characters(self):
+        """
+        Test the make_options_form function with project names containing special characters.
+        """
+        project_list = ["proj&1", "proj<2", "proj>3"]
+        html_output = make_options_form(project_list)
+
+        for project in project_list:
+            assert f'<option value="{project}">{project}</option>' in html_output
