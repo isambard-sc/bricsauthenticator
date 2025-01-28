@@ -56,3 +56,35 @@ def test_user_env():
     assert env["USER"] == "testuser.project1"
     assert env["HOME"] == "/home/project1/testuser.project1"
     assert env["SHELL"] == "/bin/bash"
+
+
+def test_req_username_default():
+    """
+    Test the _req_username_default method to ensure it constructs the username correctly.
+    """
+    spawner = BricsSlurmSpawner()
+    spawner.user = MagicMock()
+    spawner.user.name = "testuser"
+    spawner.user_options = {"brics_project": "project1"}
+
+    # Call the method
+    result = spawner._req_username_default()
+
+    # Assert the expected result
+    assert result == "testuser.project1"
+
+
+def test_req_homedir_default():
+    """
+    Test the _req_homedir_default method to ensure it constructs the home directory path correctly.
+    """
+    spawner = BricsSlurmSpawner()
+    spawner.user = MagicMock()
+    spawner.user.name = "testuser"
+    spawner.user_options = {"brics_project": "project1"}
+
+    # Call the method
+    result = spawner._req_homedir_default()
+
+    # Assert the expected result
+    assert result == "/home/project1/testuser.project1"
