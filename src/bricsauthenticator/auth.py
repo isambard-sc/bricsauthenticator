@@ -99,6 +99,7 @@ class BricsLoginHandler(BaseHandler):
                 return {}
         return projects  # If already a dict, return as is
 
+
 class BricsAuthenticator(Authenticator):
 
     oidc_server = Unicode(

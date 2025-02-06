@@ -1,7 +1,7 @@
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
-import json
 import pytest
 from tornado.httputil import HTTPServerRequest
 from tornado.web import Application, HTTPError
@@ -150,30 +150,34 @@ async def test_get():
     handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
     handler._decode_jwt = MagicMock(
-    return_value={
-        "short_name": "test_user",
-        "projects": json.dumps({
+        return_value={
+            "short_name": "test_user",
+            "projects": json.dumps(
+                {
+                    "brics.brics": {
+                        "name": "BriCS Technical Staff",
+                        "resources": [
+                            {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                            {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                            {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
+                        ],
+                    }
+                }
+            ),  # JSON string format
+        }
+    )
+    handler._normalize_projects = MagicMock(
+        return_value={
             "brics.brics": {
                 "name": "BriCS Technical Staff",
                 "resources": [
                     {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
                     {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
-                ]
+                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
+                ],
             }
-        })  # JSON string format
-    })
-    handler._normalize_projects = MagicMock(
-    return_value={
-        "brics.brics": {
-            "name": "BriCS Technical Staff",
-            "resources": [
-                {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
-                {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-                {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
-            ]
         }
-    })
+    )
 
     handler.auth_to_user = AsyncMock(return_value={"name": "test_user"})
     handler.set_login_cookie = MagicMock()
@@ -192,15 +196,18 @@ async def test_get():
     handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
     handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
 
-    expected_projects = json.dumps({
-    "brics.brics": {
-        "name": "BriCS Technical Staff",
-        "resources": [
-            {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
-            {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-            {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
-        ]
-    }})
+    expected_projects = json.dumps(
+        {
+            "brics.brics": {
+                "name": "BriCS Technical Staff",
+                "resources": [
+                    {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                    {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
+                ],
+            }
+        }
+    )
     handler._normalize_projects.assert_called_once_with({"short_name": "test_user", "projects": expected_projects})
     handler.set_login_cookie.assert_called_once_with({"name": "test_user"})
     handler.redirect.assert_called_once_with("/home")
