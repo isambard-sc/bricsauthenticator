@@ -108,12 +108,6 @@ def test_decode_jwt_failure(handler):
         assert exc_info.value.status_code == 401
 
 
-def test_normalize_projects_valid_json(handler):
-    decoded_token = {"projects": '{"project1": "value1"}'}
-    result = handler._normalize_projects(decoded_token)
-    assert result == {"project1": "value1"}
-
-
 def test_normalize_projects_invalid_json(handler):
     decoded_token = {"projects": "invalid_json"}
     result = handler._normalize_projects(decoded_token)
@@ -149,36 +143,8 @@ async def test_get():
     )
     handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
-    handler._decode_jwt = MagicMock(
-        return_value={
-            "short_name": "test_user",
-            "projects": json.dumps(
-                {
-                    "brics.brics": {
-                        "name": "BriCS Technical Staff",
-                        "resources": [
-                            {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
-                            {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-                            {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
-                        ],
-                    }
-                }
-            ),  # JSON string format
-        }
-    )
-    handler._normalize_projects = MagicMock(
-        return_value={
-            "brics.brics": {
-                "name": "BriCS Technical Staff",
-                "resources": [
-                    {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
-                    {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
-                ],
-            }
-        }
-    )
-
+    handler._decode_jwt = MagicMock(return_value={"short_name": "test_user", "projects": {}})
+    handler._normalize_projects = MagicMock(return_value={"project1": "value1"})
     handler.auth_to_user = AsyncMock(return_value={"name": "test_user"})
     handler.set_login_cookie = MagicMock()
     handler.get_next_url = MagicMock(return_value="/home")
@@ -195,20 +161,6 @@ async def test_get():
     )
     handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
     handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
-
-    expected_projects = json.dumps(
-        {
-            "brics.brics": {
-                "name": "BriCS Technical Staff",
-                "resources": [
-                    {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
-                    {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
-                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"},
-                ],
-            }
-        }
-    )
-    handler._normalize_projects.assert_called_once_with({"short_name": "test_user", "projects": expected_projects})
     handler.set_login_cookie.assert_called_once_with({"name": "test_user"})
     handler.redirect.assert_called_once_with("/home")
 
@@ -226,3 +178,57 @@ def test_get_handlers():
     assert handlers[0][0] == r"/login"
     assert handlers[0][1] == BricsLoginHandler
     assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
+
+
+@pytest.mark.parametrize(
+    "decoded_token, expected_output",
+    [
+        # Case 1: Old Format (dict of lists should be unchanged)
+        (
+            {"projects": {"brics": ["slurm.aip1.isambard", "jupyter.aip1.isambard"]}},
+            {"brics": ["slurm.aip1.isambard", "jupyter.aip1.isambard"]},
+        ),
+        # Case 2: New Format (with "resources" should be transformed)
+        (
+            {
+                "projects": {
+                    "brics.brics": {
+                        "name": "BriCS Technical Staff",
+                        "resources": [
+                            {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                            {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                        ],
+                    }
+                }
+            },
+            {"brics.brics": ["brics.aip1.notebooks.shared", "brics.aip1.clusters.shared"]},
+        ),
+        # Case 3: JSON-encoded projects should be decoded and normalized
+        (
+            {
+                "projects": json.dumps(
+                    {
+                        "benchmarking": {
+                            "resources": [
+                                {"name": "benchmarking.aip1.notebooks", "username": "user1"},
+                                {"name": "benchmarking.i3.cluster", "username": "user2"},
+                            ]
+                        }
+                    }
+                )
+            },
+            {"benchmarking": ["benchmarking.aip1.notebooks", "benchmarking.i3.cluster"]},
+        ),
+        # Case 4: Invalid JSON should return an empty dict
+        ({"projects": "{invalid_json"}, {}),
+        # Case 5: Unexpected format (not list or dict with `resources`) should be ignored
+        ({"projects": {"invalid_project": "some_string"}}, {}),
+    ],
+)
+def test_normalize_projects(handler, decoded_token, expected_output):
+    """
+    Test the _normalize_projects function to ensure it transforms
+    different formats correctly.
+    """
+    result = handler._normalize_projects(decoded_token)
+    assert result == expected_output

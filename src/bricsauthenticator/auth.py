@@ -89,15 +89,27 @@ class BricsLoginHandler(BaseHandler):
             return {}
 
         self.log.debug(f"projects claim is of type {type(projects)}")
-        if isinstance(projects, str):  # If projects is a JSON string, decode it
+
+        # If projects is a JSON string, decode it
+        if isinstance(projects, str):
             try:
-                decoded_projects = json.loads(projects)
-                self.log.debug(f"Projects claim JSON decoded: {json.dumps(decoded_projects, indent=4)}")
-                return decoded_projects
-            except (json.JSONDecodeError, TypeError):
-                self.log.warning(f"Invalid projects format: {projects}")
+                projects = json.loads(projects)
+                self.log.debug(f"Projects claim JSON decoded: {json.dumps(projects, indent=4)}")
+            except json.JSONDecodeError:
+                self.log.warning("Invalid projects format: could not decode JSON")
                 return {}
-        return projects  # If already a dict, return as is
+
+        # Ensure consistency in structure (always return dict of lists)
+        normalized_projects = {}
+        for project_name, project_data in projects.items():
+            if isinstance(project_data, list):
+                normalized_projects[project_name] = project_data
+            elif isinstance(project_data, dict) and "resources" in project_data:
+                normalized_projects[project_name] = [resource["name"] for resource in project_data.get("resources", [])]
+            else:
+                self.log.warning(f"Unexpected project format: {project_name} -> {project_data}")
+
+        return normalized_projects
 
 
 class BricsAuthenticator(Authenticator):
