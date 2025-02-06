@@ -89,15 +89,15 @@ class BricsLoginHandler(BaseHandler):
             return {}
 
         self.log.debug(f"projects claim is of type {type(projects)}")
-        try:
-            decoded_projects = json.loads(projects)  # attempt JSON decode if it's a string
-            self.log.debug(f"Projects claim JSON decoded: {decoded_projects}")
-            return decoded_projects
-        except (TypeError, ValueError):
-            # If it's already a dict or an invalid string
-            self.log.debug(f"Skipping JSON decode of projects claim: {projects}")
-            return projects
-
+        if isinstance(projects, str):  # If projects is a JSON string, decode it
+            try:
+                decoded_projects = json.loads(projects)
+                self.log.debug(f"Projects claim JSON decoded: {json.dumps(decoded_projects, indent=4)}")
+                return decoded_projects
+            except (json.JSONDecodeError, TypeError):
+                self.log.warning(f"Invalid projects format: {projects}")
+                return {}
+        return projects  # If already a dict, return as is
 
 class BricsAuthenticator(Authenticator):
 

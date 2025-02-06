@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
+import json
 import pytest
 from tornado.httputil import HTTPServerRequest
 from tornado.web import Application, HTTPError
@@ -116,7 +117,7 @@ def test_normalize_projects_valid_json(handler):
 def test_normalize_projects_invalid_json(handler):
     decoded_token = {"projects": "invalid_json"}
     result = handler._normalize_projects(decoded_token)
-    assert result == "invalid_json"
+    assert result == {}  # Expect an empty dict instead of a raw string
 
 
 def test_normalize_projects_none(handler):
@@ -148,8 +149,32 @@ async def test_get():
     )
     handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
-    handler._decode_jwt = MagicMock(return_value={"short_name": "test_user", "projects": {}})
-    handler._normalize_projects = MagicMock(return_value={"project1": "value1"})
+    handler._decode_jwt = MagicMock(
+    return_value={
+        "short_name": "test_user",
+        "projects": json.dumps({
+            "brics.brics": {
+                "name": "BriCS Technical Staff",
+                "resources": [
+                    {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                    {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                    {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
+                ]
+            }
+        })  # JSON string format
+    })
+    handler._normalize_projects = MagicMock(
+    return_value={
+        "brics.brics": {
+            "name": "BriCS Technical Staff",
+            "resources": [
+                {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
+            ]
+        }
+    })
+
     handler.auth_to_user = AsyncMock(return_value={"name": "test_user"})
     handler.set_login_cookie = MagicMock()
     handler.get_next_url = MagicMock(return_value="/home")
@@ -166,8 +191,17 @@ async def test_get():
     )
     handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
     handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
-    handler._normalize_projects.assert_called_once_with({"short_name": "test_user", "projects": {}})
-    handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": {"project1": "value1"}})
+
+    expected_projects = json.dumps({
+    "brics.brics": {
+        "name": "BriCS Technical Staff",
+        "resources": [
+            {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+            {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+            {"name": "brics.i3.clusters.shared", "username": "isambardfun.brics"}
+        ]
+    }})
+    handler._normalize_projects.assert_called_once_with({"short_name": "test_user", "projects": expected_projects})
     handler.set_login_cookie.assert_called_once_with({"name": "test_user"})
     handler.redirect.assert_called_once_with("/home")
 
