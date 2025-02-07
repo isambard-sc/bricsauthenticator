@@ -85,6 +85,7 @@ class BricsLoginHandler(BaseHandler):
 
     def _normalize_projects(self, decoded_token: dict) -> dict:
         projects = decoded_token.get("projects")
+
         if projects is None:
             return {}
 
@@ -98,6 +99,12 @@ class BricsLoginHandler(BaseHandler):
             except json.JSONDecodeError:
                 self.log.warning("Invalid projects format: could not decode JSON")
                 return {}
+
+        if not isinstance(projects, dict):
+            self.log.warning(
+                f"Invalid projects format after decoding (expected dict, got {type(projects)}), returning empty"
+            )
+            return {}
 
         # Ensure consistency in structure (always return dict of lists)
         normalized_projects = {}

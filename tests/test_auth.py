@@ -223,6 +223,34 @@ def test_get_handlers():
         ({"projects": "{invalid_json"}, {}),
         # Case 5: Unexpected format (not list or dict with `resources`) should be ignored
         ({"projects": {"invalid_project": "some_string"}}, {}),
+        # Case 6: Nested JSON string
+        (
+            {"projects": json.dumps({"nested_project": {"resources": [{"name": "test.resource"}]}})},
+            {"nested_project": ["test.resource"]},
+        ),
+        # Case 7: Empty `projects` dict should return empty
+        ({"projects": {}}, {}),
+        # Case 8: Null `projects` value should return empty
+        ({"projects": None}, {}),
+        # Case 9: JSON-encoded list (invalid case)
+        ({"projects": json.dumps([{"name": "test.resource"}])}, {}),
+        # Case 10: `resources` key exists but is empty
+        (
+            {"projects": {"brics": {"resources": []}}},
+            {"brics": []},
+        ),
+    ],
+    ids=[
+        "Old format - unchanged",
+        "New format - extract resources",
+        "JSON string - decode and normalize",
+        "Invalid JSON - return empty",
+        "Unexpected format - ignore",
+        "Nested JSON string - extract resources",
+        "Empty projects - return empty",
+        "Projects None - return empty",
+        "JSON encoded list - invalid case",
+        "Resources key empty - return empty",
     ],
 )
 def test_normalize_projects(handler, decoded_token, expected_output):
