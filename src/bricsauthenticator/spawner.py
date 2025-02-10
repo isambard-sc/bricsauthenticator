@@ -8,6 +8,8 @@ import batchspawner
 from tornado import web
 from traitlets import Dict, List, Unicode, default
 
+from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
+
 
 class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     """
@@ -24,8 +26,14 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         """,
     )
 
-    def __init__(self, interpret_form_data_fn: Callable = None, make_options_form_fn: Callable = None, **kwargs):
+    def __init__(
+        self,
+        interpret_form_data_fn: Callable = interpret_form_data,
+        make_options_form_fn: Callable = make_options_form,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
+
         self.interpret_form_data_fn = interpret_form_data_fn
         self.make_options_form_fn = make_options_form_fn
 
@@ -43,7 +51,8 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
             spawner.log.debug("Entering auth_state_hook")
             if auth_state:
                 spawner.log.debug(f"Acquired auth_state: {str(auth_state)}")
-                spawner.brics_projects = auth_state
+                projects = {k.split(".")[0]: v for k, v in auth_state.items()}
+                spawner.brics_projects = projects
             else:
                 spawner.log.debug("No auth_state acquired")
                 spawner.brics_projects = {}
