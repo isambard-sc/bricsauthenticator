@@ -51,8 +51,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
             spawner.log.debug("Entering auth_state_hook")
             if auth_state:
                 spawner.log.debug(f"Acquired auth_state: {str(auth_state)}")
-                projects = {k.split(".")[0]: v for k, v in auth_state.items()}
-                spawner.brics_projects = projects
+                spawner.brics_projects = {k.split(".")[0]: v for k, v in auth_state.items()}
             else:
                 spawner.log.debug("No auth_state acquired")
                 spawner.brics_projects = {}
