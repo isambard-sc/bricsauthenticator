@@ -30,7 +30,6 @@ class BricsLoginHandler(BaseHandler):
         signing_key = self._fetch_signing_key(jwks_uri, token)
         decoded_token = self._decode_jwt(token, signing_key, signing_algos)
 
-        # Example usage of _normalize_projects:
         projects = self._normalize_projects(decoded_token)
 
         username = decoded_token.get("short_name")
