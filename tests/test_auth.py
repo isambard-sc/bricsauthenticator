@@ -163,7 +163,7 @@ async def test_get():
     )
     handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
     handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
-    handler.set_login_cookie.assert_called_once_with({"name": "test_user"})
+    handler.set_login_cookie.assert_called_once_with(user)
     handler.redirect.assert_called_once_with("/home")
 
 
