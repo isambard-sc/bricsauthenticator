@@ -50,12 +50,7 @@ jobs:
       run: |
         make lint
 
-    - name: Test
-      if: ${{ always() && steps.install.conclusion == 'success' }}
-      run: |
-        make test
-
-    - name: Test (with coverage)
+    - name: Test with coverage
       if: ${{ always() && steps.install.conclusion == 'success' }}
       run: |
         make coverage
