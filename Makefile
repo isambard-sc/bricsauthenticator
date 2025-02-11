@@ -1,9 +1,10 @@
 .DEFAULT_GOAL := help
 PROJECT_DIR := src/bricsauthenticator
 TEST_DIR := tests/
+SCRIPTS_DIR := scripts/
 
-FORMAT_FILES := ${PROJECT_DIR} ${TEST_DIR}
-LINT_FILES := ${PROJECT_DIR} ${TEST_DIR}
+FORMAT_FILES := ${PROJECT_DIR} ${TEST_DIR} ${SCRIPTS_DIR}
+LINT_FILES := ${PROJECT_DIR} ${TEST_DIR} ${SCRIPTS_DIR}
 
 # Tooling - configure in pyproject.toml
 isort := isort
