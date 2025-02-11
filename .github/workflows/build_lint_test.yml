@@ -81,7 +81,3 @@ jobs:
       with:
         name: ccoverage-report-${{ github.run_id }} 
         path: coverage.xml
-
-    - name: Debug source directory
-      run: ls -R src
-        
