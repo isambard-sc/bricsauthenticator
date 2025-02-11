@@ -67,8 +67,8 @@ def test_req_username_default():
     spawner.user.name = "testuser"
     spawner.user_options = {"brics_project": "project1"}
 
-    # Call the method
-    result = spawner._req_username_default()
+    # Call the method (which is a traitlets dynamic default value for the req_username trait)
+    result = spawner.req_username
 
     # Assert the expected result
     assert result == "testuser.project1"
@@ -83,8 +83,8 @@ def test_req_homedir_default():
     spawner.user.name = "testuser"
     spawner.user_options = {"brics_project": "project1"}
 
-    # Call the method
-    result = spawner._req_homedir_default()
+    # Call the method (which is a traitlets dynamic default value for the req_username trait)
+    result = spawner.req_homedir
 
     # Assert the expected result
     assert result == "/home/project1/testuser.project1"
