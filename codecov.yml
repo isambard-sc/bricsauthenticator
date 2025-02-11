@@ -3,6 +3,3 @@ coverage:
     project:
       default:
         target: 85  
-  color: 
-    green: 85  
-    yellow: 70  
