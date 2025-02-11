@@ -145,7 +145,9 @@ async def test_get():
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
     handler._decode_jwt = MagicMock(return_value={"short_name": "test_user", "projects": {}})
     handler._normalize_projects = MagicMock(return_value={"project1": ["value1"]})
-    handler.auth_to_user = AsyncMock(return_value={"name": "test_user"})
+		user = MagicMock()
+		user.name = "test_user"
+    handler.auth_to_user = AsyncMock(return_value=user)
     handler.set_login_cookie = MagicMock()
     handler.get_next_url = MagicMock(return_value="/home")
     handler.redirect = MagicMock()
