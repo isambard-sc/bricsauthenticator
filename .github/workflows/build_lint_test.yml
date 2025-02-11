@@ -12,6 +12,10 @@ permissions: {}
 jobs:
   build_lint_test:
 
+    env:
+      PYTHON_VERSION_COVERAGE_UPLOAD: "3.12"
+
+
     strategy:
       fail-fast: false
       matrix:
@@ -57,14 +61,14 @@ jobs:
         make coverage
 
     - name: Upload coverage artifact
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == env.PYTHON_VERSION_COVERAGE_UPLOAD
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: htmlcov
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == env.PYTHON_VERSION_COVERAGE_UPLOAD
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -72,7 +76,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload coverage artifact
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == env.PYTHON_VERSION_COVERAGE_UPLOAD
       uses: actions/upload-artifact@v4
       with:
         name: ccoverage-report-${{ github.run_id }} 
