@@ -2,9 +2,9 @@ name: "Python package: build, lint, and test"
 
 on:
   push:
-    branches: [ "main", "tests" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "tests" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions: {}
