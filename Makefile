@@ -1,9 +1,10 @@
 .DEFAULT_GOAL := help
 PROJECT_DIR := src/bricsauthenticator
 TEST_DIR := tests/
+SCRIPTS_DIR := scripts/
 
-FORMAT_FILES := ${PROJECT_DIR} ${TEST_DIR}
-LINT_FILES := ${PROJECT_DIR} ${TEST_DIR}
+FORMAT_FILES := ${PROJECT_DIR} ${TEST_DIR} ${SCRIPTS_DIR}
+LINT_FILES := ${PROJECT_DIR} ${TEST_DIR} ${SCRIPTS_DIR}
 
 # Tooling - configure in pyproject.toml
 isort := isort
@@ -17,6 +18,7 @@ help:
 	@echo "  make format"
 	@echo "  make lint"
 	@echo "  make test"
+	@echo "  make coverage"
 
 .PHONY: format
 format:
@@ -33,3 +35,7 @@ lint:
 .PHONY: test
 test:
 	${pytest} ${TEST_DIR}
+
+.PHONY: coverage
+coverage:
+	${pytest} --cov=bricsauthenticator --cov-report=term-missing --cov-report=xml --cov-report=html ${TEST_DIR}

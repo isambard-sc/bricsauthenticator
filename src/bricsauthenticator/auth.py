@@ -13,46 +13,62 @@ from traitlets import Unicode
 
 
 class BricsLoginHandler(BaseHandler):
-    def initialize(self, oidc_server: str):
-        # A dict passed as third arg for a URLSpec (handler specification) will
-        # provide keyword arguments to initialize(), see e.g.
-        # https://www.tornadoweb.org/en/stable/web.html#tornado.web.RequestHandler.initialize
-        # https://www.tornadoweb.org/en/stable/web.html#application-configuration
+    def initialize(self, oidc_server: str, http_client=None, jwks_client_factory=None):
         self.oidc_server = oidc_server
+        self.http_client = http_client or AsyncHTTPClient()
+        self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
+
+    def _default_jwks_client_factory(self, jwks_uri: str):
+        headers = {"User-Agent": f"PyJWT/{jwt.__version__}"}
+        return jwt.PyJWKClient(jwks_uri, headers=headers)
 
     async def get(self):
-        # Retrieve the JWT token from the headers
+        token = self._extract_token()
+
+        oidc_config = await self._fetch_oidc_config()
+        signing_algos, jwks_uri = self._parse_oidc_config(oidc_config)
+        signing_key = self._fetch_signing_key(jwks_uri, token)
+        decoded_token = self._decode_jwt(token, signing_key, signing_algos)
+
+        projects = self._normalize_projects(decoded_token)
+
+        username = decoded_token.get("short_name")
+        if not username:
+            raise web.HTTPError(401, "Invalid token: Missing short_name claim")
+
+        user = await self.auth_to_user({"name": username, "auth_state": projects})
+        self.set_login_cookie(user)
+        next_url = self.get_next_url(user)
+        self.redirect(next_url)
+
+    def _extract_token(self) -> str:
         token = self.request.headers.get("X-Auth-Id-Token")
         if not token:
             raise web.HTTPError(401, "Missing X-Auth-Id-Token header")
-
-        # Log raw JWT token prior to decoding (optional for debugging)
         self.log.debug(f"Raw JWT Token: {token}")
+        return token
 
-        http_client = AsyncHTTPClient()
+    async def _fetch_oidc_config(self) -> dict:
         try:
-            # Log OIDC server request (optional for debugging)
-            self.log.debug(f"Requesting OIDC server configuration from {self.oidc_server}")
-            response = await http_client.fetch(
-                request=f"{self.oidc_server}/.well-known/openid-configuration", method="GET"
-            )
+            self.log.debug(f"Requesting OIDC config from {self.oidc_server}")
+            response = await self.http_client.fetch(f"{self.oidc_server}/.well-known/openid-configuration")
+            return json.loads(response.body)
         except Exception as e:
-            self.log.exception(f"Encountered exception when fetching OIDC server config")
+            self.log.exception("Failed to fetch OIDC config")
             raise web.HTTPError(500) from e
 
-        oidc_config = json.loads(response.body)
+    def _parse_oidc_config(self, oidc_config: dict):
         signing_algos = oidc_config["id_token_signing_alg_values_supported"]
+        jwks_uri = oidc_config["jwks_uri"]
+        return signing_algos, jwks_uri
 
-        # A 'User-Agent' header is required, otherwise the oidc_server returns HTTP 403 forbidden
-        jwks_client = jwt.PyJWKClient(oidc_config["jwks_uri"], headers={"User-Agent": f"PyJWT/{jwt.__version__}"})
-        signing_key = jwks_client.get_signing_key_from_jwt(token)
+    def _fetch_signing_key(self, jwks_uri: str, token: str):
+        jwks_client = self.jwks_client_factory(jwks_uri)
+        return jwks_client.get_signing_key_from_jwt(token)
 
+    def _decode_jwt(self, token: str, signing_key, signing_algos: list) -> dict:
         try:
-            # Decode the JWT token and verify
-            # Verifies signature and values of audience (aud), issuer (iss),
-            # expiry (exp), and issued at (iat) claims
-            # Verifies presence of short_name and projects claims (used in JupyterHub)
-            decoded_token = jwt.decode(
+            return jwt.decode(
                 token,
                 key=signing_key.key,
                 algorithms=signing_algos,
@@ -63,43 +79,43 @@ class BricsLoginHandler(BaseHandler):
                 audience="zenith-jupyter",
                 issuer=self.oidc_server,
             )
-
-            # Log all key-value pairs in the JWT token (optional for debugging)
-            self.log.debug(
-                "Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items())
-            )
-
-            # Extract the username (or other unique identifier) from the token
-            username = decoded_token.get("short_name")
-            if not username:
-                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
-
-            # The projects claim in the JWT should represent a mapping of
-            # project names to infrastructures. For the JWTs generated by BriCS
-            # Keycloak, jwt.decode() does not seem to reliably decode the nested
-            # JSON object and may return the claim as a string. To ensure
-            # consistent internal representation of the projects claim, attempt
-            # to decode the claim, and if this fails (as expected for an
-            # already-decoded claim), use the claim as-is.
-            projects = decoded_token.get("projects")
-            self.log.debug(f"projects claim is of type {type(projects)}")
-            try:
-                projects = json.loads(projects)
-                self.log.debug(f"Projects claim JSON decoded: {projects}")
-            except TypeError:
-                self.log.debug(f"Skipping JSON decode of projects claim: {projects}")
-
-            # TODO Only allow authentication if any project has access to Jupyter
-            #  by inspecting the resources allocated to each project
-
-            # Authenticate the user with JupyterHub
-            user = await self.auth_to_user({"name": username, "auth_state": projects})
-            self.set_login_cookie(user)
-            next_url = self.get_next_url(user)
-            self.redirect(next_url)
-
         except jwt.InvalidTokenError as e:
             raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
+
+    def _normalize_projects(self, decoded_token: dict) -> dict:
+        projects = decoded_token.get("projects")
+
+        if projects is None:
+            return {}
+
+        self.log.debug(f"projects claim is of type {type(projects)}")
+
+        # If projects is a JSON string, decode it
+        if isinstance(projects, str):
+            try:
+                projects = json.loads(projects)
+                self.log.debug(f"Projects claim JSON decoded: {json.dumps(projects, indent=4)}")
+            except json.JSONDecodeError:
+                self.log.warning("Invalid projects format: could not decode JSON")
+                return {}
+
+        if not isinstance(projects, dict):
+            self.log.warning(
+                f"Invalid projects format after decoding (expected dict, got {type(projects)}), returning empty"
+            )
+            return {}
+
+        # Ensure consistency in structure (always return dict of lists)
+        normalized_projects = {}
+        for project_name, project_data in projects.items():
+            if isinstance(project_data, list):
+                normalized_projects[project_name] = project_data
+            elif isinstance(project_data, dict) and "resources" in project_data:
+                normalized_projects[project_name] = [resource["name"] for resource in project_data.get("resources", [])]
+            else:
+                self.log.warning(f"Unexpected project format: {project_name} -> {project_data}")
+
+        return normalized_projects
 
 
 class BricsAuthenticator(Authenticator):

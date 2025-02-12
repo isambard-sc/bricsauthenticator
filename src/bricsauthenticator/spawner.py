@@ -26,6 +26,17 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         """,
     )
 
+    def __init__(
+        self,
+        interpret_form_data_fn: Callable = interpret_form_data,
+        make_options_form_fn: Callable = make_options_form,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+        self.interpret_form_data_fn = interpret_form_data_fn
+        self.make_options_form_fn = make_options_form_fn
+
     @default("auth_state_hook")
     def _auth_state_hook_default(self) -> Callable:
         """
@@ -40,7 +51,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
             spawner.log.debug("Entering auth_state_hook")
             if auth_state:
                 spawner.log.debug(f"Acquired auth_state: {str(auth_state)}")
-                spawner.brics_projects = auth_state
+                spawner.brics_projects = {k.split(".")[0]: v for k, v in auth_state.items()}
             else:
                 spawner.log.debug("No auth_state acquired")
                 spawner.brics_projects = {}
@@ -60,7 +71,9 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         self.log.debug("Entering BricsSlurmSpawner._options_form_default")
 
         def spawner_options_form(spawner):
-            return make_options_form(project_list=list(spawner.brics_projects.keys()))
+            if not self.make_options_form_fn:
+                raise ValueError("make_options_form_fn is not provided")
+            return self.make_options_form_fn(project_list=list(spawner.brics_projects.keys()))
 
         return spawner_options_form
 
@@ -76,9 +89,11 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         """
 
         def interpret_form_with_error_handling(form_data, spawner):
+            if not self.interpret_form_data_fn:
+                raise ValueError("interpret_form_data_fn is not provided")
             valid_projects = set(spawner.brics_projects.keys())
             try:
-                options = interpret_form_data(form_data, valid_projects)
+                options = self.interpret_form_data_fn(form_data, valid_projects)
             except ValueError as e:
                 raise web.HTTPError(500, str(e))
             return options

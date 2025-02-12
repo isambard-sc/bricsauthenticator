@@ -31,6 +31,8 @@ dependencies = [
 #   python -m pip install -e ".[dev]"
 dev = [
     "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
     "pytest-mock",
     "autoflake",
     "isort",
@@ -78,3 +80,13 @@ addopts = [
 ]
 tmp_path_retention_count = 3
 tmp_path_retention_policy = "all"
+
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+
+filterwarnings = [
+    "ignore::DeprecationWarning:tornado.ioloop"
+]
+markers = [
+    "asyncio: mark tests that use asyncio"
+]
