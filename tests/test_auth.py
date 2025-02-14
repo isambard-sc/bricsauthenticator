@@ -235,13 +235,8 @@ def test_get_handlers():
 @pytest.mark.parametrize(
     "decoded_token, expected_output",
     [
-        # Case 1: Old Format (dict of lists should be unchanged)
-        (
-            {"projects": {"brics": ["slurm.aip1.isambard", "jupyter.aip1.isambard"]}},
-            {"brics": ["slurm.aip1.isambard", "jupyter.aip1.isambard"]},
-        ),
-        # Case 2: New Format (with "resources" should be transformed)
-        (
+        # dict[str, dict] should be passed through unchanged
+        pytest.param(
             {
                 "projects": {
                     "brics.brics": {
@@ -253,10 +248,19 @@ def test_get_handlers():
                     }
                 }
             },
-            {"brics.brics": ["brics.aip1.notebooks.shared", "brics.aip1.clusters.shared"]},
+            {
+                "brics.brics": {
+                    "name": "BriCS Technical Staff",
+                    "resources": [
+                        {"name": "brics.aip1.notebooks.shared", "username": "isambardfun.brics"},
+                        {"name": "brics.aip1.clusters.shared", "username": "isambardfun.brics"},
+                    ],
+                }
+            },
+            id="dict[str, dict] - unchanged"
         ),
-        # Case 3: JSON-encoded projects should be decoded and normalized
-        (
+        # dict[str, str] with JSON-encoded str should be decoded to dict[str, dict]
+        pytest.param(
             {
                 "projects": json.dumps(
                     {
@@ -269,46 +273,36 @@ def test_get_handlers():
                     }
                 )
             },
-            {"benchmarking": ["benchmarking.aip1.notebooks", "benchmarking.i3.cluster"]},
+            {
+                "benchmarking": {
+                    "resources": [
+                        {"name": "benchmarking.aip1.notebooks", "username": "user1"},
+                        {"name": "benchmarking.i3.cluster", "username": "user2"},
+                    ]
+                }
+            },
+            id="dict[str, str] JSON string - decode",
         ),
-        # Case 4: Invalid JSON should return an empty dict
-        ({"projects": "{invalid_json"}, {}),
-        # Case 5: Unexpected format (not list or dict with `resources`) should be ignored
-        ({"projects": {"invalid_project": "some_string"}}, {}),
-        # Case 6: Nested JSON string
-        (
+        # Invalid JSON should return an empty dict
+        pytest.param({"projects": "{invalid_json"}, {}, id="Invalid JSON - return empty"),
+        # Nested JSON string
+        pytest.param(
             {"projects": json.dumps({"nested_project": {"resources": [{"name": "test.resource"}]}})},
-            {"nested_project": ["test.resource"]},
+            {"nested_project": {"resources": [{"name": "test.resource"}]}},
+            id="Nested JSON string - decode",
         ),
-        # Case 7: Empty `projects` dict should return empty
-        ({"projects": {}}, {}),
-        # Case 8: Null `projects` value should return empty
-        ({"projects": None}, {}),
-        # Case 9: JSON-encoded list (invalid case)
-        ({"projects": json.dumps([{"name": "test.resource"}])}, {}),
-        # Case 10: `resources` key exists but is empty
-        (
-            {"projects": {"brics": {"resources": []}}},
-            {"brics": []},
-        ),
-    ],
-    ids=[
-        "Old format - unchanged",
-        "New format - extract resources",
-        "JSON string - decode and normalize",
-        "Invalid JSON - return empty",
-        "Unexpected format - ignore",
-        "Nested JSON string - extract resources",
-        "Empty projects - return empty",
-        "Projects None - return empty",
-        "JSON encoded list - invalid case",
-        "Resources key empty - return empty",
+        # Empty `projects` dict should return empty
+        pytest.param({"projects": {}}, {}, id="Empty projects - return empty"),
+        # Null `projects` value should return empty
+        pytest.param({"projects": None}, {}, id="Projects None - return empty"),
+        # JSON-encoded list (invalid case)
+        pytest.param({"projects": json.dumps([{"name": "test.resource"}])}, {}, id="JSON encoded list - invalid case")
     ],
 )
 def test_normalize_projects(handler, decoded_token, expected_output):
     """
-    Test the _normalize_projects function to ensure it transforms
-    different formats correctly.
+    Test the _normalize_projects function to ensure it interprets
+    different input correctly
     """
     result = handler._normalize_projects(decoded_token)
     assert result == expected_output
