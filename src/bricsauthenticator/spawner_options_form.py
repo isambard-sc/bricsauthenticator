@@ -115,7 +115,7 @@ def validate_form_data(form_data, valid_projects):
         raise ValueError("unknown form data keys")
 
     # Validate brics_project
-    brics_project_regex = r"^[a-z][a-z0-9\-_]+$"
+    brics_project_regex = r"^[a-z][a-z0-9\-_]*\.[a-z][a-z0-9\-_]*$"
     brics_project = str(form_data["brics_project"][0])
     if not re.fullmatch(brics_project_regex, brics_project):
         raise ValueError("brics_project not valid")
