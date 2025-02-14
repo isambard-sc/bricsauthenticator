@@ -24,7 +24,7 @@ def handler():
     request.connection = MagicMock()  # Add the 'connection' attribute
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
-    handler_instance = BricsLoginHandler(application, request, oidc_server="https://example.com")
+    handler_instance = BricsLoginHandler(application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com")
     handler_instance.http_client = AsyncMock()
     handler_instance.jwks_client_factory = MagicMock()
     return handler_instance
