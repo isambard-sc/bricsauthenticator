@@ -13,8 +13,9 @@ from traitlets import Unicode
 
 
 class BricsLoginHandler(BaseHandler):
-    def initialize(self, oidc_server: str, http_client=None, jwks_client_factory=None):
+    def initialize(self, oidc_server: str, platform: str, http_client=None, jwks_client_factory=None):
         self.oidc_server = oidc_server
+        self.platform = platform
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 
@@ -36,7 +37,12 @@ class BricsLoginHandler(BaseHandler):
         if not username:
             raise web.HTTPError(401, "Invalid token: Missing short_name claim")
 
-        user = await self.auth_to_user({"name": username, "auth_state": projects})
+        auth_state = self._auth_state_from_projects(projects, self.platform)
+
+        if not len(auth_state) > 0:
+            raise web.HTTPError(403, "No projects with valid platform")
+
+        user = await self.auth_to_user({"name": username, "auth_state": auth_state})
         self.set_login_cookie(user)
         next_url = self.get_next_url(user)
         self.redirect(next_url)
@@ -105,18 +111,64 @@ class BricsLoginHandler(BaseHandler):
             )
             return {}
 
-        # Ensure consistency in structure (always return dict of lists)
-        normalized_projects = {}
-        for project_name, project_data in projects.items():
-            if isinstance(project_data, list):
-                normalized_projects[project_name] = project_data
-            elif isinstance(project_data, dict) and "resources" in project_data:
-                normalized_projects[project_name] = [resource["name"] for resource in project_data.get("resources", [])]
-            else:
-                self.log.warning(f"Unexpected project format: {project_name} -> {project_data}")
+        return projects
 
-        return normalized_projects
+    def _auth_state_from_projects(self, projects: dict, platform: str) -> dict:
+        """
+        Transform normalized projects claim to auth_state
 
+        `projects` should be a dict mapping project short names to a dict
+        of project data containing a project human name and a list of dicts
+        containing information about resources associated with the project, e.g.
+
+        {
+          "project1.portal": {
+            "name": "Project 1",
+            "resources: [
+              {
+                "name": "portal.example.notebooks.shared",
+                "username": "test_user.project1"
+              },
+              {
+                "name": "portal.example.clusters.shared",
+                "username": "test_user.project1"
+              },
+            ]
+          },
+          "project2.portal": {
+            "name": "Project 2",
+            "resources: [
+              {
+                "name": "portal.example.clusters.shared",
+                "username": "test_user.project2"
+              },
+            ]
+          }
+        }
+
+        The returned auth_state is a transformed version of this claim which
+        contains data only for projects where there is at least one resource
+        with a name which matches `platform`, e.g. for 
+        `platform` == portal.example.notebooks.shared the result is
+
+        {
+          "project1.portal": {
+            "name": "Project 1",
+            "username": "test_user.project1",
+          },
+        },
+
+        :param projects: "projects" claim from token
+        :param platform: platform name to filter projects by
+        :return: auth_state for passing to `Spawnerz
+        """
+        auth_state = dict()
+        for project_id, project_data in projects.items():
+            for resource in project_data["resources"]:
+                if resource["name"] == platform:
+                    auth_state[project_id] = {"name": project_data["name"], "username": resource["username"]}
+                    break
+        return auth_state
 
 class BricsAuthenticator(Authenticator):
 
@@ -126,8 +178,14 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    brics_platform = Unicode(
+        default_value="brics.aip1.notebooks.shared",
+        help="BriCS platform being authenticated to as it appears in the JWT projects claim",
+        allow_none=False,
+    ).tag(config=True)
+
     def get_handlers(self, app):
-        return [(r"/login", BricsLoginHandler, {"oidc_server": self.oidc_server})]
+        return [(r"/login", BricsLoginHandler, {"oidc_server": self.oidc_server, "platform": self.brics_platform})]
 
     async def authenticate(self, *args, **kwargs):
         raise NotImplementedError("This method should not be called directly.")
