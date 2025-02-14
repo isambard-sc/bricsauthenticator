@@ -119,6 +119,49 @@ def test_normalize_projects_none(handler):
     result = handler._normalize_projects(decoded_token)
     assert result == {}
 
+@pytest.mark.parametrize(
+        "platform,normalized_projects,expected_result",
+        [
+            pytest.param(
+                "portal.example.clusters.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}]}},
+                {},
+                id = "1 project, 0 matching platform"
+            ),
+            pytest.param(
+                "portal.example.notebooks.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.other.shared", "username": "test_user.project1"}]}},
+                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+                id = "1 project, 1 matching platform"
+            ),
+            pytest.param(
+                "portal.example.clusters.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}]},
+                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}]}},
+                {},
+                id = "2 project, 0 matching platform"
+            ),
+            pytest.param(
+                "portal.example.notebooks.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.cluster.shared", "username": "test_cluster_user.project1"}]},
+                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}]}},
+                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+                id = "2 project, 1 matching platform"
+            ),
+            pytest.param(
+                "portal.example.notebooks.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.cluster.shared", "username": "test_cluster_user.project1"}]},
+                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}]}},
+                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
+                 "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
+                },
+                id = "2 project, 2 matching platform"
+            ),
+        ]
+)
+def test_auth_state_from_projects(handler, platform: str, normalized_projects: dict, expected_result: dict):
+    result = handler._auth_state_from_projects(projects=normalized_projects, platform=platform)
+    assert result == expected_result
 
 @pytest.mark.asyncio
 async def test_get():
