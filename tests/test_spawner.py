@@ -26,7 +26,7 @@ def test_options_form_default(mocker):
 
     form_callable = spawner.options_form
     assert form_callable(spawner) == "<form>mock_form</form>"
-    mock_make_options_form.assert_called_once_with(project_list=[])
+    mock_make_options_form.assert_called_once_with(projects={})
 
 
 def test_options_from_form_default(mocker):
