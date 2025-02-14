@@ -177,7 +177,7 @@ async def test_get():
     request.connection = MagicMock()  # Add the 'connection' attribute
 
     # Create an instance of the handler
-    handler = BricsLoginHandler(application, request, oidc_server="https://example.com")
+    handler = BricsLoginHandler(application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com")
 
     # Mock handler dependencies
     handler._extract_token = MagicMock(return_value="mock_token")
@@ -186,8 +186,12 @@ async def test_get():
     )
     handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
-    handler._decode_jwt = MagicMock(return_value={"short_name": "test_user", "projects": {}})
-    handler._normalize_projects = MagicMock(return_value={"project1": ["value1"]})
+    projects = {"project1": {"name": "Project 1", "resources": [{"name": "portal.cluster.example.shared", "username": "test_user.project1"}]}}
+    decoded_token = {"short_name": "test_user", "projects": projects}
+    handler._decode_jwt = MagicMock(return_value=decoded_token)
+    handler._normalize_projects = MagicMock(return_value=projects)
+    auth_state = {"project1": {"name": "Project 1", "username": "test_user.project1"}}
+    handler._auth_state_from_projects = MagicMock(return_value=auth_state)
     user = MagicMock()
     user.name = "test_user"
     handler.auth_to_user = AsyncMock(return_value=user)
@@ -206,6 +210,9 @@ async def test_get():
     )
     handler._fetch_signing_key.assert_called_once_with("https://example.com/jwks", "mock_token")
     handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
+    handler._normalize_projects.assert_called_once_with(decoded_token)
+    handler._auth_state_from_projects.assert_called_once_with(projects, handler.platform)
+    handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": auth_state})
     handler.set_login_cookie.assert_called_once_with(user)
     handler.redirect.assert_called_once_with("/home")
 
