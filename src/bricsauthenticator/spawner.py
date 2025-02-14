@@ -73,7 +73,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         def spawner_options_form(spawner):
             if not self.make_options_form_fn:
                 raise ValueError("make_options_form_fn is not provided")
-            return self.make_options_form_fn(project_list=list(spawner.brics_projects.keys()))
+            return self.make_options_form_fn(projects=spawner.brics_projects)
 
         return spawner_options_form
 
