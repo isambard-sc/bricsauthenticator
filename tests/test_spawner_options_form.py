@@ -12,13 +12,13 @@ class TestDefuse:
             ("brics ", "'brics '"),
             (" brics ", "' brics '"),
             ("brics; ls -l /", "'brics; ls -l /'"),
-            ("my-project", "my-project"),
-            ("my-project; ls", "'my-project; ls'"),
-            ("my_project", "my_project"),
-            ("my/project", "my/project"),
-            (r"my\ project", r"'my\ project'"),
-            ("project100", "project100"),
-            ("$project100", "'$project100'"),
+            ("my-project.portal", "my-project.portal"),
+            ("my-project.portal; ls", "'my-project.portal; ls'"),
+            ("my_project.portal", "my_project.portal"),
+            ("my/project.a_portal", "my/project.a_portal"),
+            (r"my\ project.my\ portal", r"'my\ project.my\ portal'"),
+            ("project100.portal200", "project100.portal200"),
+            ("$project100.$portal200", "'$project100.$portal200'"),
         ],
     )
     def test_defuse(self, input_to_defuse, defused_output):
@@ -30,34 +30,34 @@ class TestInterpretFormData:
 
     @pytest.fixture
     def valid_projects(self):
-        return {"valid_project", "valid-project", "validproject1", "another_project"}
+        return {"valid_project.a_portal", "valid-project.a-portal", "validproject1.portal1", "another_project.anotherportal"}
 
     @pytest.mark.parametrize(
         "form_data",
         [
             {
-                "brics_project": ["valid_project"],
+                "brics_project": ["valid_project.a_portal"],
                 "runtime": ["01:00:00"],
                 "ngpus": ["1"],
                 "partition": ["valid_partition"],
                 "reservation": ["valid_reservation"],
             },
             {
-                "brics_project": ["valid-project"],
+                "brics_project": ["valid-project.a-portal"],
                 "runtime": ["00:12:34"],
                 "ngpus": ["2"],
                 "partition": ["valid-partition"],
                 "reservation": ["valid-reservation"],
             },
             {
-                "brics_project": ["validproject1"],
+                "brics_project": ["validproject1.portal1"],
                 "runtime": ["23:59:59"],
                 "ngpus": ["3"],
                 "partition": ["validpartition1"],
                 "reservation": ["validreservation1"],
             },
             {
-                "brics_project": ["valid_project"],
+                "brics_project": ["valid_project.a_portal"],
                 "runtime": ["01:00:00"],
                 "ngpus": ["4"],
                 "partition": ["VALID_partition"],
@@ -74,7 +74,13 @@ class TestInterpretFormData:
         assert result["partition"] == form_data["partition"][0]
         assert result["reservation"] == form_data["reservation"][0]
 
-    @pytest.mark.parametrize("project", ["unknown_project", "unknown-project", "unknownproject1"])
+    @pytest.mark.parametrize("project",
+        [
+            "unknown_project.unknown_portal",
+            "unknown-project.unknown-portal",
+            "unknownproject1.unknownportal1"
+        ]
+    )
     def test_invalid_brics_project(self, valid_projects, project):
         form_data = {
             "brics_project": [project],
@@ -88,10 +94,19 @@ class TestInterpretFormData:
     @pytest.mark.parametrize(
         "project",
         [
-            pytest.param("invalid project", id="with space"),
-            pytest.param("invalid_project!", id="with !"),
-            pytest.param("1invalid_project", id="first char is number"),
-            pytest.param("invalidProject", id="with capital letter"),
+            pytest.param("invalid project.portal", id="project with space"),
+            pytest.param("invalid_project!.portal", id="project with !"),
+            pytest.param("1invalid_project.portal", id="project first char is number"),
+            pytest.param("invalidProject.portal", id="project with capital letter"),
+            pytest.param("project.invalid portal", id="portal with space"),
+            pytest.param("project.invalid_portal!", id="portal with !"),
+            pytest.param("project.1invalid_portal", id="portal first char is number"),
+            pytest.param("project.invalidPortal", id="portal with capital letter"),
+            pytest.param("project", id="no dot"),
+            pytest.param(".project", id="dot at start"),
+            pytest.param("project.", id="dot at end"),
+            pytest.param("project..portal", id="2 dots in the middle"),
+            pytest.param("project.something.portal", id="3 dot-separate strings"),
         ],
     )
     def test_invalid_brics_project_format(self, valid_projects, project):
@@ -115,7 +130,7 @@ class TestInterpretFormData:
     )
     def test_invalid_runtime(self, valid_projects, runtime):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": [runtime],  # Invalid time format
             "ngpus": ["1"],
         }
@@ -133,7 +148,7 @@ class TestInterpretFormData:
     )
     def test_invalid_ngpus(self, valid_projects, ngpus):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": [ngpus],  # Invalid GPU count
         }
@@ -150,7 +165,7 @@ class TestInterpretFormData:
     )
     def test_invalid_partition_format(self, valid_projects, partition):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": ["1"],
             "partition": [partition],  # Invalid partition format
@@ -168,7 +183,7 @@ class TestInterpretFormData:
     )
     def test_invalid_reservation_format(self, valid_projects, reservation):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": ["1"],
             "reservation": [reservation],  # Invalid reservation format
@@ -179,7 +194,7 @@ class TestInterpretFormData:
 
     def test_optional_fields_empty(self, valid_projects):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": ["1"],
             "partition": [""],  # Empty partition (should default to None)
@@ -187,7 +202,7 @@ class TestInterpretFormData:
         }
 
         result = interpret_form_data(form_data, valid_projects)
-        assert result["brics_project"] == "valid_project"
+        assert result["brics_project"] == "valid_project.a_portal"
         assert result["runtime"] == "01:00:00"
         assert result["ngpus"] == "1"
         assert result["partition"] is None
@@ -195,14 +210,14 @@ class TestInterpretFormData:
 
     def test_missing_optional_fields(self, valid_projects):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": ["1"],
             # partition and reservation are missing
         }
 
         result = interpret_form_data(form_data, valid_projects)
-        assert result["brics_project"] == "valid_project"
+        assert result["brics_project"] == "valid_project.a_portal"
         assert result["runtime"] == "01:00:00"
         assert result["ngpus"] == "1"
         assert result["partition"] is None
@@ -210,7 +225,7 @@ class TestInterpretFormData:
 
     def test_invalid_form_data_unknown_key(self, valid_projects):
         form_data = {
-            "brics_project": ["valid_project"],
+            "brics_project": ["valid_project.a_portal"],
             "runtime": ["01:00:00"],
             "ngpus": ["1"],
             "partition": [""],
@@ -235,7 +250,7 @@ class TestInterpretFormData:
 
     def test_invalid_regex_patterns(self, valid_projects):
         form_data = {
-            "brics_project": ["valid_project"],  # This one is valid
+            "brics_project": ["valid_project.a_portal"],  # This one is valid
             "runtime": ["InvalidTimeFormat"],  # Invalid time format
             "ngpus": ["NotANumber"],  # Not a valid GPU count
             "partition": ["Invalid Partition!"],  # Invalid partition format
@@ -269,7 +284,6 @@ class TestMakeOptionsForm:
         """
         Test the make_options_form function with an empty projects dict
         """
-        project_list = {}
         html_output = make_options_form({})
 
         # Check for the placeholder option
