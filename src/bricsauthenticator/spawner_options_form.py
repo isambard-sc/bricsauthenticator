@@ -7,7 +7,7 @@ import shlex
 from datetime import datetime
 
 
-def make_options_form(project_list: list[str]) -> str:
+def make_options_form(projects: dict[str, dict]) -> str:
     """
     Return a HTML options form for user to configure spawned session
 
@@ -15,8 +15,9 @@ def make_options_form(project_list: list[str]) -> str:
     surrounding `<form>` element and submit button are not included, as are
     added when this function is called by JupyterHub.
 
-    :param project_list: list of selectable projects, typically provided by
-      :class:`Spawner` instance
+    :param projects: dict containing information about selectable projects, 
+      where keys are project identifiers and the value dict contains the 
+      human-readable project name, typically provided by :class:`Spawner` instance
     :return: HTML form with user-selectable JupyterHub spawner options
     """
 
@@ -24,12 +25,11 @@ def make_options_form(project_list: list[str]) -> str:
     # This causes form controls to be horizontally aligned
     label_style = "display:inline-block;width:16em;text-align:left"
 
-    # TODO Restrict list of selectable projects to those with access to Jupyter resources
     # Handle empty project list
-    if not project_list:
+    if not projects:
         project_options = ['<option value="" disabled>No projects available</option>']
     else:
-        project_options = [f'<option value="{project}">{project}</option>' for project in project_list]
+        project_options = [f'<option value="{project_id}">{project_id}: {project_data["name"]}</option>' for project_id, project_data in projects.items()]
 
     project_select = f'<label style="{label_style}" for="brics_project_select">Choose a project:</label>' + "\n".join(
         ['<select name="brics_project" id="brics_project_select">'] + project_options + ["</select>"]
