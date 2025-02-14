@@ -110,7 +110,7 @@ class BricsLoginHandler(BaseHandler):
                 f"Invalid projects format after decoding (expected dict, got {type(projects)}), returning empty"
             )
             return {}
-
+        
         return projects
 
     def _auth_state_from_projects(self, projects: dict, platform: str) -> dict:
