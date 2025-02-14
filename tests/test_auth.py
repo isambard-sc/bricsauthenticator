@@ -24,7 +24,7 @@ def handler():
     request.connection = MagicMock()  # Add the 'connection' attribute
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
-    handler_instance = BricsLoginHandler(application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com")
+    handler_instance = BricsLoginHandler(application, request, platform="portal.dummy.platform.shared", oidc_server="https://example.com")
     handler_instance.http_client = AsyncMock()
     handler_instance.jwks_client_factory = MagicMock()
     return handler_instance
@@ -143,14 +143,14 @@ def test_normalize_projects_none(handler):
             ),
             pytest.param(
                 "portal.example.notebooks.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.cluster.shared", "username": "test_cluster_user.project1"}]},
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
                  "project2": {"name": "Project 2", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}]}},
                 {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
                 id = "2 project, 1 matching platform"
             ),
             pytest.param(
                 "portal.example.notebooks.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.cluster.shared", "username": "test_cluster_user.project1"}]},
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
                  "project2": {"name": "Project 2", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}]}},
                 {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
                  "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
@@ -216,6 +216,49 @@ async def test_get():
     handler.set_login_cookie.assert_called_once_with(user)
     handler.redirect.assert_called_once_with("/home")
 
+@pytest.mark.parametrize(
+        "platform, projects",
+        [
+            pytest.param(
+                "portal.example.notebooks.shared",
+                {},
+                id="empty project claim"
+            ),
+            pytest.param(
+                "portal.example.other.shared",
+                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
+                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}]}},
+                id="no projects with resource name matching platform"
+            )
+        ]
+)
+@pytest.mark.asyncio
+async def test_get_no_valid_projects_exception(handler, platform: str, projects: dict[str, dict]):
+    handler.platform = platform
+
+    # Mock all methods up until a the token is decoded
+    handler._extract_token = MagicMock()
+    handler._fetch_oidc_config = AsyncMock()
+    handler._parse_oidc_config = MagicMock(return_value=(MagicMock, MagicMock))
+    handler._fetch_signing_key = MagicMock()
+    
+    decoded_token = {
+        "aud": "zenith-jupyter",
+        "exp": 12345,
+        "iss": "https://example.com",
+        "iat": 12344,
+        "short_name": "user",
+        "projects": projects,
+    }
+
+    # Mock the JWT decoding function and its return value
+    handler._decode_jwt = MagicMock(return_value=decoded_token)
+
+    with pytest.raises(HTTPError, match="No projects with valid platform") as exc_info:
+        await handler.get()
+
+    assert exc_info.value.status_code == 403
+
 
 def test_get_handlers():
     # Create an instance of BricsAuthenticator
@@ -264,7 +307,7 @@ def test_get_handlers():
             {
                 "projects": json.dumps(
                     {
-                        "benchmarking": {
+                        "benchmarking.portal": {
                             "resources": [
                                 {"name": "benchmarking.aip1.notebooks", "username": "user1"},
                                 {"name": "benchmarking.i3.cluster", "username": "user2"},
@@ -274,7 +317,7 @@ def test_get_handlers():
                 )
             },
             {
-                "benchmarking": {
+                "benchmarking.portal": {
                     "resources": [
                         {"name": "benchmarking.aip1.notebooks", "username": "user1"},
                         {"name": "benchmarking.i3.cluster", "username": "user2"},
