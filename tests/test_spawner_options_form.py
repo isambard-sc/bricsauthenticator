@@ -30,7 +30,12 @@ class TestInterpretFormData:
 
     @pytest.fixture
     def valid_projects(self):
-        return {"valid_project.a_portal", "valid-project.a-portal", "validproject1.portal1", "another_project.anotherportal"}
+        return {
+            "valid_project.a_portal",
+            "valid-project.a-portal",
+            "validproject1.portal1",
+            "another_project.anotherportal",
+        }
 
     @pytest.mark.parametrize(
         "form_data",
@@ -74,12 +79,9 @@ class TestInterpretFormData:
         assert result["partition"] == form_data["partition"][0]
         assert result["reservation"] == form_data["reservation"][0]
 
-    @pytest.mark.parametrize("project",
-        [
-            "unknown_project.unknown_portal",
-            "unknown-project.unknown-portal",
-            "unknownproject1.unknownportal1"
-        ]
+    @pytest.mark.parametrize(
+        "project",
+        ["unknown_project.unknown_portal", "unknown-project.unknown-portal", "unknownproject1.unknownportal1"],
     )
     def test_invalid_brics_project(self, valid_projects, project):
         form_data = {
@@ -259,6 +261,7 @@ class TestInterpretFormData:
 
         with pytest.raises(ValueError):
             interpret_form_data(form_data, valid_projects)
+
 
 class TestMakeOptionsForm:
 

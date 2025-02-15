@@ -15,8 +15,8 @@ def make_options_form(projects: dict[str, dict]) -> str:
     surrounding `<form>` element and submit button are not included, as are
     added when this function is called by JupyterHub.
 
-    :param projects: dict containing information about selectable projects, 
-      where keys are project identifiers and the value dict contains the 
+    :param projects: dict containing information about selectable projects,
+      where keys are project identifiers and the value dict contains the
       human-readable project name, typically provided by :class:`Spawner` instance
     :return: HTML form with user-selectable JupyterHub spawner options
     """
@@ -29,7 +29,10 @@ def make_options_form(projects: dict[str, dict]) -> str:
     if not projects:
         project_options = ['<option value="" disabled>No projects available</option>']
     else:
-        project_options = [f'<option value="{project_id}">{project_id}: {project_data["name"]}</option>' for project_id, project_data in projects.items()]
+        project_options = [
+            f'<option value="{project_id}">{project_id}: {project_data["name"]}</option>'
+            for project_id, project_data in projects.items()
+        ]
 
     project_select = f'<label style="{label_style}" for="brics_project_select">Choose a project:</label>' + "\n".join(
         ['<select name="brics_project" id="brics_project_select">'] + project_options + ["</select>"]

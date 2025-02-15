@@ -24,7 +24,9 @@ def handler():
     request.connection = MagicMock()  # Add the 'connection' attribute
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
-    handler_instance = BricsLoginHandler(application, request, platform="portal.dummy.platform.shared", oidc_server="https://example.com")
+    handler_instance = BricsLoginHandler(
+        application, request, platform="portal.dummy.platform.shared", oidc_server="https://example.com"
+    )
     handler_instance.http_client = AsyncMock()
     handler_instance.jwks_client_factory = MagicMock()
     return handler_instance
@@ -119,49 +121,97 @@ def test_normalize_projects_none(handler):
     result = handler._normalize_projects(decoded_token)
     assert result == {}
 
+
 @pytest.mark.parametrize(
-        "platform,normalized_projects,expected_result",
-        [
-            pytest.param(
-                "portal.example.clusters.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}]}},
-                {},
-                id = "1 project, 0 matching platform"
-            ),
-            pytest.param(
-                "portal.example.notebooks.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.other.shared", "username": "test_user.project1"}]}},
-                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
-                id = "1 project, 1 matching platform"
-            ),
-            pytest.param(
-                "portal.example.clusters.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}]},
-                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}]}},
-                {},
-                id = "2 project, 0 matching platform"
-            ),
-            pytest.param(
-                "portal.example.notebooks.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
-                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}]}},
-                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
-                id = "2 project, 1 matching platform"
-            ),
-            pytest.param(
-                "portal.example.notebooks.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
-                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}]}},
-                {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
-                 "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
+    "platform,normalized_projects,expected_result",
+    [
+        pytest.param(
+            "portal.example.clusters.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
+                }
+            },
+            {},
+            id="1 project, 0 matching platform",
+        ),
+        pytest.param(
+            "portal.example.notebooks.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
+                        {"name": "portal.example.other.shared", "username": "test_user.project1"},
+                    ],
+                }
+            },
+            {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+            id="1 project, 1 matching platform",
+        ),
+        pytest.param(
+            "portal.example.clusters.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
                 },
-                id = "2 project, 2 matching platform"
-            ),
-        ]
+                "project2": {
+                    "name": "Project 2",
+                    "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}],
+                },
+            },
+            {},
+            id="2 project, 0 matching platform",
+        ),
+        pytest.param(
+            "portal.example.notebooks.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
+                        {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
+                    ],
+                },
+                "project2": {
+                    "name": "Project 2",
+                    "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}],
+                },
+            },
+            {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+            id="2 project, 1 matching platform",
+        ),
+        pytest.param(
+            "portal.example.notebooks.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
+                        {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
+                    ],
+                },
+                "project2": {
+                    "name": "Project 2",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}
+                    ],
+                },
+            },
+            {
+                "project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
+                "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
+            },
+            id="2 project, 2 matching platform",
+        ),
+    ],
 )
 def test_auth_state_from_projects(handler, platform: str, normalized_projects: dict, expected_result: dict):
     result = handler._auth_state_from_projects(projects=normalized_projects, platform=platform)
     assert result == expected_result
+
 
 @pytest.mark.asyncio
 async def test_get():
@@ -177,7 +227,9 @@ async def test_get():
     request.connection = MagicMock()  # Add the 'connection' attribute
 
     # Create an instance of the handler
-    handler = BricsLoginHandler(application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com")
+    handler = BricsLoginHandler(
+        application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com"
+    )
 
     # Mock handler dependencies
     handler._extract_token = MagicMock(return_value="mock_token")
@@ -186,7 +238,12 @@ async def test_get():
     )
     handler._parse_oidc_config = MagicMock(return_value=(["RS256"], "https://example.com/jwks"))
     handler._fetch_signing_key = MagicMock(return_value=MagicMock(key="mock_key"))
-    projects = {"project1": {"name": "Project 1", "resources": [{"name": "portal.cluster.example.shared", "username": "test_user.project1"}]}}
+    projects = {
+        "project1": {
+            "name": "Project 1",
+            "resources": [{"name": "portal.cluster.example.shared", "username": "test_user.project1"}],
+        }
+    }
     decoded_token = {"short_name": "test_user", "projects": projects}
     handler._decode_jwt = MagicMock(return_value=decoded_token)
     handler._normalize_projects = MagicMock(return_value=projects)
@@ -216,21 +273,31 @@ async def test_get():
     handler.set_login_cookie.assert_called_once_with(user)
     handler.redirect.assert_called_once_with("/home")
 
+
 @pytest.mark.parametrize(
-        "platform, projects",
-        [
-            pytest.param(
-                "portal.example.notebooks.shared",
-                {},
-                id="empty project claim"
-            ),
-            pytest.param(
-                "portal.example.other.shared",
-                {"project1": {"name": "Project 1", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},{"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"}]},
-                 "project2": {"name": "Project 2", "resources": [{"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}]}},
-                id="no projects with resource name matching platform"
-            )
-        ]
+    "platform, projects",
+    [
+        pytest.param("portal.example.notebooks.shared", {}, id="empty project claim"),
+        pytest.param(
+            "portal.example.other.shared",
+            {
+                "project1": {
+                    "name": "Project 1",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
+                        {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
+                    ],
+                },
+                "project2": {
+                    "name": "Project 2",
+                    "resources": [
+                        {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}
+                    ],
+                },
+            },
+            id="no projects with resource name matching platform",
+        ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_get_no_valid_projects_exception(handler, platform: str, projects: dict[str, dict]):
@@ -241,7 +308,7 @@ async def test_get_no_valid_projects_exception(handler, platform: str, projects:
     handler._fetch_oidc_config = AsyncMock()
     handler._parse_oidc_config = MagicMock(return_value=(MagicMock, MagicMock))
     handler._fetch_signing_key = MagicMock()
-    
+
     decoded_token = {
         "aud": "zenith-jupyter",
         "exp": 12345,
@@ -300,7 +367,7 @@ def test_get_handlers():
                     ],
                 }
             },
-            id="dict[str, dict] - unchanged"
+            id="dict[str, dict] - unchanged",
         ),
         # dict[str, str] with JSON-encoded str should be decoded to dict[str, dict]
         pytest.param(
@@ -339,7 +406,7 @@ def test_get_handlers():
         # Null `projects` value should return empty
         pytest.param({"projects": None}, {}, id="Projects None - return empty"),
         # JSON-encoded list (invalid case)
-        pytest.param({"projects": json.dumps([{"name": "test.resource"}])}, {}, id="JSON encoded list - invalid case")
+        pytest.param({"projects": json.dumps([{"name": "test.resource"}])}, {}, id="JSON encoded list - invalid case"),
     ],
 )
 def test_normalize_projects(handler, decoded_token, expected_output):

@@ -110,7 +110,7 @@ class BricsLoginHandler(BaseHandler):
                 f"Invalid projects format after decoding (expected dict, got {type(projects)}), returning empty"
             )
             return {}
-        
+
         return projects
 
     def _auth_state_from_projects(self, projects: dict, platform: str) -> dict:
@@ -148,7 +148,7 @@ class BricsLoginHandler(BaseHandler):
 
         The returned auth_state is a transformed version of this claim which
         contains data only for projects where there is at least one resource
-        with a name which matches `platform`, e.g. for 
+        with a name which matches `platform`, e.g. for
         `platform` == portal.example.notebooks.shared the result is
 
         {
@@ -169,6 +169,7 @@ class BricsLoginHandler(BaseHandler):
                     auth_state[project_id] = {"name": project_data["name"], "username": resource["username"]}
                     break
         return auth_state
+
 
 class BricsAuthenticator(Authenticator):
 

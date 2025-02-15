@@ -6,7 +6,7 @@ from typing import Callable
 
 import batchspawner
 from tornado import web
-from traitlets import Dict, List, Unicode, default
+from traitlets import Dict, Unicode, default
 
 from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
 
