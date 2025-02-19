@@ -31,6 +31,10 @@ class BricsLoginHandler(BaseHandler):
         signing_key = self._fetch_signing_key(jwks_uri, token)
         decoded_token = self._decode_jwt(token, signing_key, signing_algos)
 
+        self.log.debug(
+            "Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items())
+        )
+
         projects = self._normalize_projects(decoded_token)
 
         username = decoded_token.get("short_name")
@@ -52,6 +56,7 @@ class BricsLoginHandler(BaseHandler):
         if not token:
             raise web.HTTPError(401, "Missing X-Auth-Id-Token header")
         self.log.debug(f"Raw JWT Token: {token}")
+        self.log.debug(f"Raw JWT Size: {len(token.encode('ascii'))} bytes")
         return token
 
     async def _fetch_oidc_config(self) -> dict:
