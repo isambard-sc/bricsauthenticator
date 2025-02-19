@@ -5,6 +5,7 @@ import jwt
 import pytest
 from tornado.httputil import HTTPServerRequest
 from tornado.web import Application, HTTPError
+from tornado.httputil import HTTPHeaders
 
 from bricsauthenticator.auth import BricsAuthenticator, BricsLoginHandler
 
@@ -19,9 +20,10 @@ def handler():
         "log_function": MagicMock(),  # Mock the application-level logger
     }
 
-    # Mock request with a connection attribute
+    # Mock request with a connection attribute and empty headers
     request = MagicMock(spec=HTTPServerRequest)
     request.connection = MagicMock()  # Add the 'connection' attribute
+    request.headers = HTTPHeaders({})
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
     handler_instance = BricsLoginHandler(
@@ -33,7 +35,7 @@ def handler():
 
 
 def test_extract_token_missing_header(handler):
-    handler.request.headers = {}
+    handler.request.headers = HTTPHeaders({})
     with pytest.raises(HTTPError) as exc_info:
         handler._extract_token()
     assert exc_info.value.status_code == 401
@@ -41,7 +43,7 @@ def test_extract_token_missing_header(handler):
 
 
 def test_extract_token_success(handler):
-    handler.request.headers = {"X-Auth-Id-Token": "fake_token"}
+    handler.request.headers = HTTPHeaders({"X-Auth-Id-Token": "fake_token"})
     token = handler._extract_token()
     assert token == "fake_token"
 
@@ -225,6 +227,7 @@ async def test_get():
     # Mock request with a connection attribute
     request = MagicMock(spec=HTTPServerRequest)
     request.connection = MagicMock()  # Add the 'connection' attribute
+    request.headers = HTTPHeaders({"X-Auth-Id-Token": "fake_token"})
 
     # Create an instance of the handler
     handler = BricsLoginHandler(

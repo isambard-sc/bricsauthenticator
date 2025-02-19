@@ -24,6 +24,9 @@ class BricsLoginHandler(BaseHandler):
         return jwt.PyJWKClient(jwks_uri, headers=headers)
 
     async def get(self):
+
+        self.log.debug("Estimated request header size: {:d} bytes", sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()))
+
         token = self._extract_token()
 
         oidc_config = await self._fetch_oidc_config()
