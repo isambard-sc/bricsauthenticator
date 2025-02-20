@@ -25,7 +25,7 @@ class BricsLoginHandler(BaseHandler):
 
     async def get(self):
 
-        self.log.debug("Estimated request header size: {:d} bytes", sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()))
+        self.log.debug("Estimated request header size: %d bytes", sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()))
 
         token = self._extract_token()
 
