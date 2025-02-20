@@ -25,7 +25,10 @@ class BricsLoginHandler(BaseHandler):
 
     async def get(self):
 
-        self.log.debug("Estimated request header size: %d bytes", sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()))
+        self.log.debug(
+            "Estimated request header size: %d bytes",
+            sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()),
+        )
 
         token = self._extract_token()
 
@@ -34,9 +37,7 @@ class BricsLoginHandler(BaseHandler):
         signing_key = self._fetch_signing_key(jwks_uri, token)
         decoded_token = self._decode_jwt(token, signing_key, signing_algos)
 
-        self.log.debug(
-            "Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items())
-        )
+        self.log.debug("Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items()))
 
         projects = self._normalize_projects(decoded_token)
 

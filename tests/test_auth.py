@@ -3,9 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
 import pytest
-from tornado.httputil import HTTPServerRequest
+from tornado.httputil import HTTPHeaders, HTTPServerRequest
 from tornado.web import Application, HTTPError
-from tornado.httputil import HTTPHeaders
 
 from bricsauthenticator.auth import BricsAuthenticator, BricsLoginHandler
 
