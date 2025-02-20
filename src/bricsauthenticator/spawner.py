@@ -6,7 +6,7 @@ from typing import Callable
 
 import batchspawner
 from tornado import web
-from traitlets import Dict, List, Unicode, default
+from traitlets import Dict, Unicode, default
 
 from bricsauthenticator.spawner_options_form import interpret_form_data, make_options_form
 
@@ -17,10 +17,10 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     """
 
     brics_projects = Dict(
-        value_trait=List(trait=Unicode()),
+        value_trait=Dict(value_trait=Unicode(), key_trait=Unicode()),
         key_trait=Unicode(),
         help="""
-        Dictionary mapping BriCS project names to lists of associated BriCS infrastructures.
+        Dictionary mapping BriCS project names to dict of associated BriCS resources.
         
         Should be set by Authenticator via Spawner.auth_state_hook()
         """,
@@ -51,7 +51,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
             spawner.log.debug("Entering auth_state_hook")
             if auth_state:
                 spawner.log.debug(f"Acquired auth_state: {str(auth_state)}")
-                spawner.brics_projects = {k.split(".")[0]: v for k, v in auth_state.items()}
+                spawner.brics_projects = auth_state
             else:
                 spawner.log.debug("No auth_state acquired")
                 spawner.brics_projects = {}
@@ -73,7 +73,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         def spawner_options_form(spawner):
             if not self.make_options_form_fn:
                 raise ValueError("make_options_form_fn is not provided")
-            return self.make_options_form_fn(project_list=list(spawner.brics_projects.keys()))
+            return self.make_options_form_fn(projects=spawner.brics_projects)
 
         return spawner_options_form
 
@@ -103,12 +103,12 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     @property
     def brics_project_user_name(self) -> str:
         """
-        Get the BriCS project user name of the form <USER>.<PROJECT>
+        Get the BriCS project user name based on the project selected in the spawner options form
 
         :return: BriCS project user name
         """
         self.log.debug("Entering BricsSlurmSpawner.brics_project_user_name()")
-        return self.user.name + "." + self.brics_project_name
+        return self.brics_projects[self.user_options["brics_project"]]["username"]
 
     @property
     def brics_project_name(self) -> str:
@@ -132,7 +132,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         Dynamic default value for req_homedir trait
         """
         self.log.debug("Entering BricsSlurmSpawner._req_homedir_default()")
-        return f"/home/{self.brics_project_name}/{self.brics_project_user_name}"
+        return f"/home/{self.brics_project_name.partition('.')[0]}/{self.brics_project_user_name}"
 
     def user_env(self, env):
         """
