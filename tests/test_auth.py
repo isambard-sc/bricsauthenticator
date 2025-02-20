@@ -129,7 +129,7 @@ def test_normalize_projects_none(handler):
         pytest.param(
             "portal.example.clusters.shared",
             {
-                "project1": {
+                "project1.portal": {
                     "name": "Project 1",
                     "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
                 }
@@ -140,7 +140,7 @@ def test_normalize_projects_none(handler):
         pytest.param(
             "portal.example.notebooks.shared",
             {
-                "project1": {
+                "project1.portal": {
                     "name": "Project 1",
                     "resources": [
                         {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
@@ -148,17 +148,17 @@ def test_normalize_projects_none(handler):
                     ],
                 }
             },
-            {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+            {"project1.portal": {"name": "Project 1", "username": "test_notebook_user.project1"}},
             id="1 project, 1 matching platform",
         ),
         pytest.param(
             "portal.example.clusters.shared",
             {
-                "project1": {
+                "project1.portal": {
                     "name": "Project 1",
                     "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
                 },
-                "project2": {
+                "project2.portal": {
                     "name": "Project 2",
                     "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}],
                 },
@@ -169,32 +169,32 @@ def test_normalize_projects_none(handler):
         pytest.param(
             "portal.example.notebooks.shared",
             {
-                "project1": {
+                "project1.portal": {
                     "name": "Project 1",
                     "resources": [
                         {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
                         {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
                     ],
                 },
-                "project2": {
+                "project2.portal": {
                     "name": "Project 2",
                     "resources": [{"name": "portal.example.other.shared", "username": "test_user.project2"}],
                 },
             },
-            {"project1": {"name": "Project 1", "username": "test_notebook_user.project1"}},
+            {"project1.portal": {"name": "Project 1", "username": "test_notebook_user.project1"}},
             id="2 project, 1 matching platform",
         ),
         pytest.param(
             "portal.example.notebooks.shared",
             {
-                "project1": {
+                "project1.portal": {
                     "name": "Project 1",
                     "resources": [
                         {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
                         {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
                     ],
                 },
-                "project2": {
+                "project2.portal": {
                     "name": "Project 2",
                     "resources": [
                         {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}
@@ -202,8 +202,8 @@ def test_normalize_projects_none(handler):
                 },
             },
             {
-                "project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
-                "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
+                "project1.portal": {"name": "Project 1", "username": "test_notebook_user.project1"},
+                "project2.portal": {"name": "Project 2", "username": "test_notebook_user.project2"},
             },
             id="2 project, 2 matching platform",
         ),
