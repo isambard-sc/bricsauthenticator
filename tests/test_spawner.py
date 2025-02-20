@@ -85,7 +85,7 @@ def test_req_homedir_default():
     spawner.brics_projects = {"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}
     spawner.user_options = {"brics_project": "project1.portal"}
 
-    # Call the method (which is a traitlets dynamic default value for the req_username trait)
+    # Call the method (which is a traitlets dynamic default value for the req_homedir trait)
     result = spawner.req_homedir
 
     # Assert the expected result
