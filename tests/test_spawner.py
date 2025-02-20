@@ -8,8 +8,8 @@ def test_auth_state_hook_default():
     auth_state_hook = spawner.auth_state_hook
 
     mock_auth_state = {
-        "project1": {"name": "Project 1", "username": "test_notebook_user.project1"},
-        "project2": {"name": "Project 2", "username": "test_notebook_user.project2"},
+        "project1.portal": {"name": "Project 1", "username": "test_notebook_user.project1"},
+        "project2.portal": {"name": "Project 2", "username": "test_notebook_user.project2"},
     }
     spawner.brics_projects = {}
     auth_state_hook(spawner, mock_auth_state)
