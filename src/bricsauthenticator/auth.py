@@ -91,7 +91,7 @@ class BricsLoginHandler(BaseHandler):
                     "verify_signature": True,
                     "require": ["aud", "exp", "iss", "iat", "short_name", "projects"],
                 },
-                audience="zenith-jupyter",
+                audience=self.jwt_audience,  # make it configurable
                 issuer=self.oidc_server,
             )
         except jwt.InvalidTokenError as e:
@@ -191,6 +191,12 @@ class BricsAuthenticator(Authenticator):
     brics_platform = Unicode(
         default_value="brics.aip1.notebooks.shared",
         help="BriCS platform being authenticated to as it appears in the JWT projects claim",
+        allow_none=False,
+    ).tag(config=True)
+
+    jwt_audience = Unicode(
+        default_value="zenith-jupyter",
+        help="Expected audience claim in the JWT token",
         allow_none=False,
     ).tag(config=True)
 
