@@ -24,8 +24,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         
         Should be set by Authenticator via Spawner.auth_state_hook()
         """,
-        allow_none=True,
-        default_value=None,
+        default_value=dict(),
     )
 
     def __init__(
