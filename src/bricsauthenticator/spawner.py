@@ -158,7 +158,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         Restore state of :class:`BricsSlurmSpawner` after hub process restarts
 
         Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
-        specific to :class:`BricsSlurmSpawner`. 
+        specific to :class:`BricsSlurmSpawner`.
 
         :param state: dict containing state loaded from database
         """
@@ -172,7 +172,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         Save state of :class:`BricsSlurmSpawner` into database
 
         Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
-        specific to :class:`BricsSlurmSpawner`. 
+        specific to :class:`BricsSlurmSpawner`.
 
         :return: a JSONable dict of state to persist in the database
         """
@@ -184,13 +184,13 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
     def clear_state(self) -> None:
         """
         Clear state of :class:`BricsSlurmSpawner` when single user server is stopped
-        
+
         Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
-        specific to :class:`BricsSlurmSpawner`. 
+        specific to :class:`BricsSlurmSpawner`.
 
         .. note::
-            
+
             There is currently no additional state to clear as `brics_projects`
-            should be persisted between single-user server instances. 
+            should be persisted between single-user server instances.
         """
         super().clear_state()
