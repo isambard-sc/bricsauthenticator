@@ -164,9 +164,11 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         :param state: dict containing state loaded from database
         """
         super().load_state(state)
-        self.log.debug("Loading state: brics_projects")
-        self.brics_projects = state["brics_projects"]
-        self.log.debug(f"Acquired brics_projects: {self.brics_projects}")
+        if "brics_projects" in state:
+            self.brics_projects = state["brics_projects"]
+            self.log.debug(f"BricsSlurmSpawner.load_state() acquired brics_projects: {self.brics_projects}")
+        else:
+            
 
     def get_state(self) -> dict:
         """
@@ -178,9 +180,8 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         :return: a JSONable dict of state to persist in the database
         """
         state = super().get_state()
-        self.log.debug("Saving state: brics_projects")
         state["brics_projects"] = self.brics_projects
-        self.log.debug(f"To save brics_projects: {brics_projects}")
+        self.log.debug(f"BricsSlurmSpawner saving brics_projects: {brics_projects}")
         return state
 
     def clear_state(self) -> None:
