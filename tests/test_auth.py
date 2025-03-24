@@ -1,4 +1,5 @@
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
@@ -418,3 +419,26 @@ def test_normalize_projects(handler, decoded_token, expected_output):
     """
     result = handler._normalize_projects(decoded_token)
     assert result == expected_output
+
+
+def test_jwt_leeway_accepts_future_iat():
+    key = "test-secret"
+    algorithm = "HS256"
+
+    # Simulate a token from 2 seconds in the future
+    future_iat = int(time.time()) + 2
+
+    payload = {
+        "sub": "test-user",
+        "iat": future_iat,
+    }
+
+    token = jwt.encode(payload, key, algorithm=algorithm)
+
+    # Without leeway, this should fail
+    with pytest.raises(jwt.exceptions.ImmatureSignatureError):
+        jwt.decode(token, key, algorithms=[algorithm])
+
+    # With leeway, it should succeed
+    decoded = jwt.decode(token, key, algorithms=[algorithm], leeway=5)
+    assert decoded["sub"] == "test-user"

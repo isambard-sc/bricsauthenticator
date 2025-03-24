@@ -93,6 +93,7 @@ class BricsLoginHandler(BaseHandler):
                 },
                 audience="zenith-jupyter",
                 issuer=self.oidc_server,
+                leeway=5,  # tolerate up to 5 seconds of time skew
             )
         except jwt.InvalidTokenError as e:
             raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
