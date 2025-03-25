@@ -13,9 +13,12 @@ from traitlets import Unicode
 
 
 class BricsLoginHandler(BaseHandler):
-    def initialize(self, oidc_server: str, platform: str, http_client=None, jwks_client_factory=None):
+    def initialize(
+        self, oidc_server: str, platform: str, jwt_audience=None, http_client=None, jwks_client_factory=None
+    ):
         self.oidc_server = oidc_server
         self.platform = platform
+        self.jwt_audience = jwt_audience or "zenith-jupyter"
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 
@@ -91,7 +94,7 @@ class BricsLoginHandler(BaseHandler):
                     "verify_signature": True,
                     "require": ["aud", "exp", "iss", "iat", "short_name", "projects"],
                 },
-                audience="zenith-jupyter",
+                audience=self.jwt_audience,  # make it configurable
                 issuer=self.oidc_server,
                 leeway=5,  # tolerate up to 5 seconds of time skew
             )
@@ -195,8 +198,24 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    jwt_audience = Unicode(
+        default_value="zenith-jupyter",
+        help="Expected audience claim in the JWT token",
+        allow_none=False,
+    ).tag(config=True)
+
     def get_handlers(self, app):
-        return [(r"/login", BricsLoginHandler, {"oidc_server": self.oidc_server, "platform": self.brics_platform})]
+        return [
+            (
+                r"/login",
+                BricsLoginHandler,
+                {
+                    "oidc_server": self.oidc_server,
+                    "platform": self.brics_platform,
+                    "jwt_audience": self.jwt_audience,
+                },
+            )
+        ]
 
     async def authenticate(self, *args, **kwargs):
         raise NotImplementedError("This method should not be called directly.")
