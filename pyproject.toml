@@ -62,6 +62,7 @@ remove-unused-variables = true
 [tool.isort]
 line_length = 120
 profile = 'black'
+skip = ["src/bricsauthenticator/_version.py"]
 
 [tool.black]
 line-length = 120

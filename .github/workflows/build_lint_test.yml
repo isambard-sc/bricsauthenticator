@@ -43,11 +43,7 @@ jobs:
     - name: Install package and tooling 
       id: install
       run: |
-        python -m pip install -e ".[dev]"
-
-    - name: Show isort config in CI
-      run: |
-        isort src/bricsauthenticator/_version.py --show-config
+        python -m pip install "${GITHUB_WORKSPACE}[dev]"
 
     - name: Lint
       if: ${{ always() && steps.install.conclusion == 'success' }}
