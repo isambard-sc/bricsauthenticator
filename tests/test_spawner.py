@@ -2,6 +2,8 @@ from unittest.mock import MagicMock
 
 from bricsauthenticator.spawner import BricsSlurmSpawner
 
+import pytest
+
 
 def test_auth_state_hook_default():
     spawner = BricsSlurmSpawner()
@@ -90,3 +92,30 @@ def test_req_homedir_default():
 
     # Assert the expected result
     assert result == "/home/project1/test_user.project1"
+
+@pytest.fixture
+def spawner_with_brics_projects() -> BricsSlurmSpawner:
+    """
+    :class:`BricsSlurmSpawner` instance with `brics_projects` attribute set
+    """
+
+    spawner = BricsSlurmSpawner()
+    spawner.brics_projects = {"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}
+
+    return spawner
+
+def test_load_state(spawner_with_brics_projects: BricsSlurmSpawner):
+    """
+    Check :func:`load_state` method returns the expected `state`
+    """
+
+    spawner = BricsSlurmSpawner()
+
+    assert spawner.brics_projects == dict(), "default brics_projects should be empty dict"
+
+    state = {"brics_projects": spawner_with_brics_projects.brics_projects}
+
+    spawner.load_state(state)
+
+    assert spawner.brics_projects == state["brics_projects"], "after load_state brics_projects should be populated"
+
