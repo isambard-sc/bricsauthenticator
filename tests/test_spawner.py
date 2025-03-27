@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
-from bricsauthenticator.spawner import BricsSlurmSpawner
-
 import pytest
+
+from bricsauthenticator.spawner import BricsSlurmSpawner
 
 
 def test_auth_state_hook_default():
@@ -93,17 +93,20 @@ def test_req_homedir_default():
     # Assert the expected result
     assert result == "/home/project1/test_user.project1"
 
+
 @pytest.fixture(
-    params = [
+    params=[
         pytest.param(dict(), id="empty dict"),
-        pytest.param({"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}, id="1 example project"),
+        pytest.param(
+            {"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}, id="1 example project"
+        ),
         pytest.param(
             {
                 "project1.portal": {"name": "Project 1", "username": "test_user.project1"},
                 "project2.portal": {"name": "Project 2", "username": "test_user.project2"},
-            }, 
-            id="2 example project"
-        )
+            },
+            id="2 example project",
+        ),
     ]
 )
 def brics_projects(request: pytest.FixtureRequest) -> dict:
@@ -122,7 +125,10 @@ def test_load_state(brics_projects: dict):
     state = {"brics_projects": brics_projects}
     spawner.load_state(state)
 
-    assert spawner.brics_projects == state["brics_projects"], "after load_state() call brics_projects should be populated"
+    assert (
+        spawner.brics_projects == state["brics_projects"]
+    ), "after load_state() call brics_projects should be populated"
+
 
 def test_get_state(brics_projects: dict):
     """
@@ -136,7 +142,10 @@ def test_get_state(brics_projects: dict):
 
     state = spawner.get_state()
 
-    assert state["brics_projects"] == expected_state["brics_projects"], "state from get_state() should contain 'brics_projects' key with expected value"
+    assert (
+        state["brics_projects"] == expected_state["brics_projects"]
+    ), "state from get_state() should contain 'brics_projects' key with expected value"
+
 
 def test_clear_state_brics_projects(brics_projects: dict):
     """
