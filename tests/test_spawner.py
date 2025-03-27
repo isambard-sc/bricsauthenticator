@@ -93,29 +93,62 @@ def test_req_homedir_default():
     # Assert the expected result
     assert result == "/home/project1/test_user.project1"
 
-@pytest.fixture
-def spawner_with_brics_projects() -> BricsSlurmSpawner:
-    """
-    :class:`BricsSlurmSpawner` instance with `brics_projects` attribute set
-    """
+@pytest.fixture(
+    params = [
+        pytest.param(dict(), id="empty dict"),
+        pytest.param({"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}, id="1 example project"),
+        pytest.param(
+            {
+                "project1.portal": {"name": "Project 1", "username": "test_user.project1"},
+                "project2.portal": {"name": "Project 2", "username": "test_user.project2"},
+            }, 
+            id="2 example project"
+        )
+    ]
+)
+def brics_projects(request: pytest.FixtureRequest) -> dict:
+    return request.param
 
-    spawner = BricsSlurmSpawner()
-    spawner.brics_projects = {"project1.portal": {"name": "Project 1", "username": "test_user.project1"}}
 
-    return spawner
-
-def test_load_state(spawner_with_brics_projects: BricsSlurmSpawner):
+def test_load_state(brics_projects: dict):
     """
-    Check :func:`load_state` method returns the expected `state`
+    Check :func:`BricsSlurmSpawner.load_state` sets the expected object attributes
     """
 
     spawner = BricsSlurmSpawner()
 
     assert spawner.brics_projects == dict(), "default brics_projects should be empty dict"
 
-    state = {"brics_projects": spawner_with_brics_projects.brics_projects}
-
+    state = {"brics_projects": brics_projects}
     spawner.load_state(state)
 
-    assert spawner.brics_projects == state["brics_projects"], "after load_state brics_projects should be populated"
+    assert spawner.brics_projects == state["brics_projects"], "after load_state() call brics_projects should be populated"
 
+def test_get_state(brics_projects: dict):
+    """
+    Check :func:`BricsSlurmSpawner.get_state` returns the expected state
+    """
+
+    expected_state = {"brics_projects": brics_projects}
+
+    spawner = BricsSlurmSpawner()
+    spawner.brics_projects = brics_projects
+
+    state = spawner.get_state()
+
+    assert state["brics_projects"] == expected_state["brics_projects"], "state from get_state() should contain 'brics_projects' key with expected value"
+
+def test_clear_state_brics_projects(brics_projects: dict):
+    """
+    Check :func:`BricsSlurmSpawner.clear_state` does not clear `brics_projects` attribute
+
+    The `brics_projects` attribute should not be cleared as needs to persist
+    between single-user server instances.
+    """
+
+    spawner = BricsSlurmSpawner()
+    spawner.brics_projects = brics_projects
+
+    spawner.clear_state()
+
+    assert spawner.brics_projects == brics_projects
