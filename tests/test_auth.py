@@ -1,4 +1,5 @@
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
@@ -85,8 +86,9 @@ def test_fetch_signing_key(handler):
 
 
 def test_decode_jwt_success(handler):
+    handler.jwt_audience = "zenith-jupyter"  # Match token's "aud" claim
     decoded_token = {
-        "aud": "zenith-jupyter",
+        "aud": "zenith-jupyter",  # Should match handler.jwt_audience
         "exp": 12345,
         "iss": "https://example.com",
         "iat": 12344,
@@ -99,9 +101,11 @@ def test_decode_jwt_success(handler):
     with patch("jwt.decode", return_value=decoded_token):
         result = handler._decode_jwt("fake_token", mock_signing_key, ["RS256"])
         assert result == decoded_token
+        assert result == decoded_token
 
 
 def test_decode_jwt_failure(handler):
+    handler.jwt_audience = "zenith-jupyter"
     mock_signing_key = MagicMock()
     mock_signing_key.key = "fake_key"
 
@@ -418,3 +422,26 @@ def test_normalize_projects(handler, decoded_token, expected_output):
     """
     result = handler._normalize_projects(decoded_token)
     assert result == expected_output
+
+
+def test_jwt_leeway_accepts_future_iat():
+    key = "test-secret"
+    algorithm = "HS256"
+
+    # Simulate a token from 2 seconds in the future
+    future_iat = int(time.time()) + 2
+
+    payload = {
+        "sub": "test-user",
+        "iat": future_iat,
+    }
+
+    token = jwt.encode(payload, key, algorithm=algorithm)
+
+    # Without leeway, this should fail
+    with pytest.raises(jwt.exceptions.ImmatureSignatureError):
+        jwt.decode(token, key, algorithms=[algorithm])
+
+    # With leeway, it should succeed
+    decoded = jwt.decode(token, key, algorithms=[algorithm], leeway=5)
+    assert decoded["sub"] == "test-user"
