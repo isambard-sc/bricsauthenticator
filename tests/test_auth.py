@@ -540,7 +540,7 @@ def test_jwt_exp_validation_with_leeway(
     iat = int(time.time() - timedelta(minutes=5).total_seconds() - delta_seconds)
 
     # ... that expires 5 minutes after it is issued and delta_seconds before now
-    exp = int(time.time()) - delta_seconds
+    exp = int(time.time() - delta_seconds)
 
     payload = {
         "iat": iat,
