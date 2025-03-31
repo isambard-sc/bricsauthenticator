@@ -14,11 +14,11 @@ from traitlets import Unicode
 
 class BricsLoginHandler(BaseHandler):
     def initialize(
-        self, oidc_server: str, platform: str, jwt_audience=None, http_client=None, jwks_client_factory=None
+        self, oidc_server: str, platform: str, jwt_audience: str, http_client=None, jwks_client_factory=None
     ):
         self.oidc_server = oidc_server
         self.platform = platform
-        self.jwt_audience = jwt_audience or "zenith-jupyter"
+        self.jwt_audience = jwt_audience
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 

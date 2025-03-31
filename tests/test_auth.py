@@ -27,7 +27,11 @@ def handler():
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
     handler_instance = BricsLoginHandler(
-        application, request, platform="portal.dummy.platform.shared", oidc_server="https://example.com"
+        application,
+        request,
+        platform="portal.dummy.platform.shared",
+        jwt_audience="dummy-audience",
+        oidc_server="https://example.com",
     )
     handler_instance.http_client = AsyncMock()
     handler_instance.jwks_client_factory = MagicMock()
@@ -234,7 +238,11 @@ async def test_get():
 
     # Create an instance of the handler
     handler = BricsLoginHandler(
-        application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com"
+        application,
+        request,
+        platform="portal.cluster.example.shared",
+        oidc_server="https://example.com",
+        jwt_audience="dummy-audience",
     )
 
     # Mock handler dependencies
@@ -346,6 +354,8 @@ def test_get_handlers():
     assert handlers[0][0] == r"/login"
     assert handlers[0][1] == BricsLoginHandler
     assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
+    assert handlers[0][2]["platform"] == authenticator.brics_platform
+    assert handlers[0][2]["jwt_audience"] == authenticator.jwt_audience
 
 
 @pytest.mark.parametrize(
