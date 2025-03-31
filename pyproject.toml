@@ -58,6 +58,7 @@ version_file = "src/bricsauthenticator/_version.py"
 remove-all-unused-imports = true
 ignore-init-module-imports = true
 remove-unused-variables = true
+exclude = ["src/bricsauthenticator/_version.py"]
 
 [tool.isort]
 line_length = 120

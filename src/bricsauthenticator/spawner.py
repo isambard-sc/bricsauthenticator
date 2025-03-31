@@ -24,6 +24,7 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         
         Should be set by Authenticator via Spawner.auth_state_hook()
         """,
+        default_value=dict(),
     )
 
     def __init__(
@@ -151,3 +152,45 @@ class BricsSlurmSpawner(batchspawner.SlurmSpawner):
         env["HOME"] = self.req_homedir
         env["SHELL"] = "/bin/bash"
         return env
+
+    def load_state(self, state: dict) -> None:
+        """
+        Restore state of :class:`BricsSlurmSpawner` after hub process restarts
+
+        Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
+        specific to :class:`BricsSlurmSpawner`.
+
+        :param state: dict containing state loaded from database
+        """
+        super().load_state(state)
+        if "brics_projects" in state:
+            self.brics_projects = state["brics_projects"]
+            self.log.debug(f"BricsSlurmSpawner.load_state() acquired brics_projects: {self.brics_projects}")
+
+    def get_state(self) -> dict:
+        """
+        Save state of :class:`BricsSlurmSpawner` into database
+
+        Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
+        specific to :class:`BricsSlurmSpawner`.
+
+        :return: a JSONable dict of state to persist in the database
+        """
+        state = super().get_state()
+        state["brics_projects"] = self.brics_projects
+        self.log.debug(f"BricsSlurmSpawner saving brics_projects: {self.brics_projects}")
+        return state
+
+    def clear_state(self) -> None:
+        """
+        Clear state of :class:`BricsSlurmSpawner` when single user server is stopped
+
+        Overrides :func:`BatchSpawnerBase.loadstate` to add additional state
+        specific to :class:`BricsSlurmSpawner`.
+
+        .. note::
+
+            There is currently no additional state to clear as `brics_projects`
+            should be persisted between single-user server instances.
+        """
+        super().clear_state()
