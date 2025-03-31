@@ -466,7 +466,7 @@ def test_jwt_iat_validation_with_leeway(
     signing_key.key = "test-secret"
     algorithm = "HS256"
 
-    # Freeze time to so that there is zero time between token issue and validation
+    # Freeze time to so that there is zero time between token setup and validation
     # Set microsecond=0 to ensure that there are no rounding errors from using
     # integer iat and exp claims
     frozen_time = datetime.datetime.now().replace(microsecond=0)
@@ -530,7 +530,7 @@ def test_jwt_exp_validation_with_leeway(
     signing_key.key = "test-secret"
     algorithm = "HS256"
 
-    # Freeze time to so that there is zero time between token issue and validation
+    # Freeze time to so that there is zero time between token setup and validation
     # Set microsecond=0 to ensure that there are no rounding errors from using
     # integer iat and exp claims
     frozen_time = datetime.datetime.now().replace(microsecond=0)
