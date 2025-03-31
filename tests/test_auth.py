@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -458,3 +459,43 @@ def test_jwt_leeway_accepts_future_iat():
     # With leeway, it should succeed
     decoded = jwt.decode(token, key, algorithms=[algorithm], leeway=5)
     assert decoded["sub"] == "test-user"
+
+def test_jwt_iat_validation_with_leeway(handler, leeway_seconds: int | float = 3., delta_seconds: int = 2):
+
+    signing_key = MagicMock(spec=jwt.PyJWK)
+    signing_key.key = "test-secret"
+    algorithm = "HS256"
+
+    # Simulate a token with delta seconds in the future
+    iat_adjusted = int(time.time()) + delta_seconds
+
+    # Expires 5 minutes after it is issued
+    exp = iat_adjusted + timedelta(minutes=5).total_seconds()
+
+    payload = {
+        "iat": iat_adjusted,
+        "exp": exp,
+        "aud": handler.jwt_audience,
+        "iss": handler.oidc_server,
+        "short_name": "testuser",
+        "projects": {
+            "project1.portal": {
+                "name": "Project 1",
+                "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
+            }
+        },
+    }
+
+    token = jwt.encode(payload, signing_key.key, algorithm=algorithm)
+
+    # Without leeway, this should fail
+    with pytest.raises(HTTPError, match=r"The token is not yet valid \(iat\)") as exc_info:
+        handler.jwt_leeway = 0
+        _ = handler._decode_jwt(token, signing_key, [algorithm])
+    
+    assert exc_info.value.status_code == 401
+
+    # With leeway, it should succeed
+    handler.jwt_leeway = leeway_seconds
+    decoded = handler._decode_jwt(token, signing_key, [algorithm])
+    assert decoded == payload
