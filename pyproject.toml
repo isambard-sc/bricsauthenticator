@@ -34,6 +34,7 @@ dev = [
     "pytest-asyncio",
     "pytest-cov",
     "pytest-mock",
+    "pytest-freezer",
     "autoflake",
     "isort",
     "black",

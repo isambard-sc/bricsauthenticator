@@ -1,4 +1,8 @@
+import datetime
 import json
+import time
+from contextlib import AbstractContextManager, nullcontext
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
@@ -26,7 +30,12 @@ def handler():
 
     # Initialize BricsLoginHandler with the mocked application, request, and required arguments
     handler_instance = BricsLoginHandler(
-        application, request, platform="portal.dummy.platform.shared", oidc_server="https://example.com"
+        application,
+        request,
+        platform="portal.dummy.platform.shared",
+        jwt_audience="dummy-audience",
+        jwt_leeway=5,
+        oidc_server="https://example.com",
     )
     handler_instance.http_client = AsyncMock()
     handler_instance.jwks_client_factory = MagicMock()
@@ -85,8 +94,9 @@ def test_fetch_signing_key(handler):
 
 
 def test_decode_jwt_success(handler):
+    handler.jwt_audience = "zenith-jupyter"  # Match token's "aud" claim
     decoded_token = {
-        "aud": "zenith-jupyter",
+        "aud": "zenith-jupyter",  # Should match handler.jwt_audience
         "exp": 12345,
         "iss": "https://example.com",
         "iat": 12344,
@@ -99,9 +109,11 @@ def test_decode_jwt_success(handler):
     with patch("jwt.decode", return_value=decoded_token):
         result = handler._decode_jwt("fake_token", mock_signing_key, ["RS256"])
         assert result == decoded_token
+        assert result == decoded_token
 
 
 def test_decode_jwt_failure(handler):
+    handler.jwt_audience = "zenith-jupyter"
     mock_signing_key = MagicMock()
     mock_signing_key.key = "fake_key"
 
@@ -230,7 +242,12 @@ async def test_get():
 
     # Create an instance of the handler
     handler = BricsLoginHandler(
-        application, request, platform="portal.cluster.example.shared", oidc_server="https://example.com"
+        application,
+        request,
+        platform="portal.cluster.example.shared",
+        oidc_server="https://example.com",
+        jwt_audience="dummy-audience",
+        jwt_leeway=5,
     )
 
     # Mock handler dependencies
@@ -342,6 +359,9 @@ def test_get_handlers():
     assert handlers[0][0] == r"/login"
     assert handlers[0][1] == BricsLoginHandler
     assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
+    assert handlers[0][2]["platform"] == authenticator.brics_platform
+    assert handlers[0][2]["jwt_audience"] == authenticator.jwt_audience
+    assert handlers[0][2]["jwt_leeway"] == authenticator.jwt_leeway
 
 
 @pytest.mark.parametrize(
@@ -418,3 +438,135 @@ def test_normalize_projects(handler, decoded_token, expected_output):
     """
     result = handler._normalize_projects(decoded_token)
     assert result == expected_output
+
+
+@pytest.mark.parametrize(
+    "leeway_seconds, delta_seconds, with_leeway_cm",
+    [
+        pytest.param(5, 1, nullcontext(), id="5s leeway, 2s delta"),
+        pytest.param(5, 3, nullcontext(), id="5s leeway, 3s delta"),
+        pytest.param(5, 5, nullcontext(), id="5s leeway, 5s delta"),
+        pytest.param(
+            5, 6, pytest.raises(HTTPError, match=r"The token is not yet valid \(iat\)"), id="5s leeway, 6s delta"
+        ),
+        pytest.param(3.5, 1, nullcontext(), id="3.5s leeway, 1s delta"),
+        pytest.param(
+            3.5, 4, pytest.raises(HTTPError, match=r"The token is not yet valid \(iat\)"), id="3.5s leeway, 4s delta"
+        ),
+    ],
+)
+def test_jwt_iat_validation_with_leeway(
+    freezer, handler, leeway_seconds: int | float, delta_seconds: int, with_leeway_cm: AbstractContextManager
+):
+    """
+    Check that JWTs with iat less than or equal to current time + leeway are valid
+    """
+
+    signing_key = MagicMock(spec=jwt.PyJWK)
+    signing_key.key = "test-secret"
+    algorithm = "HS256"
+
+    # Freeze time to so that there is zero time between token setup and validation
+    # Set microsecond=0 to ensure that there are no rounding errors from using
+    # integer iat and exp claims
+    frozen_time = datetime.datetime.now().replace(microsecond=0)
+    freezer.move_to(frozen_time)
+
+    # Simulate a token with delta seconds in the future
+    iat_adjusted = int(time.time() + delta_seconds)
+
+    # ... that expires 5 minutes after it is issued
+    exp = int(iat_adjusted + timedelta(minutes=5).total_seconds())
+
+    payload = {
+        "iat": iat_adjusted,
+        "exp": exp,
+        "aud": handler.jwt_audience,
+        "iss": handler.oidc_server,
+        "short_name": "testuser",
+        "projects": {
+            "project1.portal": {
+                "name": "Project 1",
+                "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
+            }
+        },
+    }
+
+    token = jwt.encode(payload, signing_key.key, algorithm=algorithm)
+
+    # Without leeway, this should fail
+    with pytest.raises(HTTPError, match=r"The token is not yet valid \(iat\)") as exc_info:
+        handler.jwt_leeway = 0
+        _ = handler._decode_jwt(token, signing_key, [algorithm])
+
+    assert exc_info.value.status_code == 401
+
+    # With leeway, it should succeed if not delta_seconds > leeway_seconds
+    with with_leeway_cm:
+        handler.jwt_leeway = leeway_seconds
+        decoded = handler._decode_jwt(token, signing_key, [algorithm])
+        assert decoded == payload
+
+
+@pytest.mark.parametrize(
+    "leeway_seconds, delta_seconds, with_leeway_cm",
+    [
+        pytest.param(5, 1, nullcontext(), id="5s leeway, 2s delta"),
+        pytest.param(5, 3, nullcontext(), id="5s leeway, 3s delta"),
+        pytest.param(5, 5, pytest.raises(HTTPError, match=r"Signature has expired"), id="5s leeway, 5s delta"),
+        pytest.param(5, 6, pytest.raises(HTTPError, match=r"Signature has expired"), id="5s leeway, 6s delta"),
+        pytest.param(3.5, 1, nullcontext(), id="3.5s leeway, 1s delta"),
+        pytest.param(3.5, 4, pytest.raises(HTTPError, match=r"Signature has expired"), id="3.5s leeway, 4s delta"),
+    ],
+)
+def test_jwt_exp_validation_with_leeway(
+    freezer, handler, leeway_seconds: int | float, delta_seconds: int, with_leeway_cm: AbstractContextManager
+):
+    """
+    Check that JWTs with exp greater than current time - leeway are valid
+    """
+
+    signing_key = MagicMock(spec=jwt.PyJWK)
+    signing_key.key = "test-secret"
+    algorithm = "HS256"
+
+    # Freeze time to so that there is zero time between token setup and validation
+    # Set microsecond=0 to ensure that there are no rounding errors from using
+    # integer iat and exp claims
+    frozen_time = datetime.datetime.now().replace(microsecond=0)
+    freezer.move_to(frozen_time)
+
+    # Simulate a token with iat 5 minutes + delta_seconds in the past
+    iat = int(time.time() - timedelta(minutes=5).total_seconds() - delta_seconds)
+
+    # ... that expires 5 minutes after it is issued and delta_seconds before now
+    exp = int(time.time() - delta_seconds)
+
+    payload = {
+        "iat": iat,
+        "exp": exp,
+        "aud": handler.jwt_audience,
+        "iss": handler.oidc_server,
+        "short_name": "testuser",
+        "projects": {
+            "project1.portal": {
+                "name": "Project 1",
+                "resources": [{"name": "portal.example.other.shared", "username": "test_user.project1"}],
+            }
+        },
+    }
+
+    token = jwt.encode(payload, signing_key.key, algorithm=algorithm)
+
+    # Without leeway, this should fail
+    with pytest.raises(HTTPError, match=r"Signature has expired") as exc_info:
+        handler.jwt_leeway = 0
+        _ = handler._decode_jwt(token, signing_key, [algorithm])
+
+    assert exc_info.value.status_code == 401
+
+    # With leeway, it should succeed if not delta_seconds >= leeway_seconds
+    with with_leeway_cm:
+        handler.jwt_leeway = leeway_seconds
+        decoded = handler._decode_jwt(token, signing_key, [algorithm])
+        assert decoded == payload

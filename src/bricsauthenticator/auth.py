@@ -9,13 +9,23 @@ from jupyterhub.auth import Authenticator
 from jupyterhub.handlers import BaseHandler
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
-from traitlets import Unicode
+from traitlets import Float, Unicode
 
 
 class BricsLoginHandler(BaseHandler):
-    def initialize(self, oidc_server: str, platform: str, http_client=None, jwks_client_factory=None):
+    def initialize(
+        self,
+        oidc_server: str,
+        platform: str,
+        jwt_audience: str,
+        jwt_leeway: float,
+        http_client=None,
+        jwks_client_factory=None,
+    ):
         self.oidc_server = oidc_server
         self.platform = platform
+        self.jwt_audience = jwt_audience
+        self.jwt_leeway = jwt_leeway
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 
@@ -91,8 +101,9 @@ class BricsLoginHandler(BaseHandler):
                     "verify_signature": True,
                     "require": ["aud", "exp", "iss", "iat", "short_name", "projects"],
                 },
-                audience="zenith-jupyter",
+                audience=self.jwt_audience,  # make it configurable
                 issuer=self.oidc_server,
+                leeway=self.jwt_leeway,  # time skew tolerance
             )
         except jwt.InvalidTokenError as e:
             raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
@@ -194,8 +205,31 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    jwt_audience = Unicode(
+        default_value="zenith-jupyter",
+        help="Expected audience claim in the JWT token",
+        allow_none=False,
+    ).tag(config=True)
+
+    jwt_leeway = Float(
+        default_value=5.0,
+        help="Time margin in seconds for checking iat and exp claims in the JWT token",
+        allow_none=False,
+    ).tag(config=True)
+
     def get_handlers(self, app):
-        return [(r"/login", BricsLoginHandler, {"oidc_server": self.oidc_server, "platform": self.brics_platform})]
+        return [
+            (
+                r"/login",
+                BricsLoginHandler,
+                {
+                    "oidc_server": self.oidc_server,
+                    "platform": self.brics_platform,
+                    "jwt_audience": self.jwt_audience,
+                    "jwt_leeway": self.jwt_leeway,
+                },
+            )
+        ]
 
     async def authenticate(self, *args, **kwargs):
         raise NotImplementedError("This method should not be called directly.")
