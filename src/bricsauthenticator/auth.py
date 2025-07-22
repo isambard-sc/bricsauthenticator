@@ -3,6 +3,7 @@ JupyterHub `Authenticator` for the BriCS JupyterHub service
 """
 
 import json
+import urllib.parse
 
 import jwt
 from jupyterhub.auth import Authenticator
@@ -193,8 +194,9 @@ class BricsLoginHandler(BaseHandler):
 
 class BricsLogoutHandler(LogoutHandler):
     async def render_logout_page(self):
-        self.log.debug("BricsLogoutHandler entering render_logout_page()")
-        self.redirect("/_oidc/sign_in")
+        redirect_url=f"/_oidc/sign_out?rd={urllib.parse.encode('/jupyter', safe='')}"
+        self.log.debug(f"BricsLogoutHandler redirecting to {redirect_url}")
+        self.redirect(redirect_url)
 
 
 class BricsAuthenticator(Authenticator):
