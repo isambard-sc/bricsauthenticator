@@ -6,7 +6,7 @@ import json
 
 import jwt
 from jupyterhub.auth import Authenticator
-from jupyterhub.handlers import BaseHandler
+from jupyterhub.handlers import BaseHandler, LogoutHandler
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
 from traitlets import Float, Unicode
@@ -191,6 +191,12 @@ class BricsLoginHandler(BaseHandler):
         return auth_state
 
 
+class BricsLogoutHandler(LogoutHandler):
+    async def render_logout_page(self):
+        self.log.debug("BricsLogoutHandler entering render_logout_page()")
+        self.redirect("/_oidc/sign_in")
+
+
 class BricsAuthenticator(Authenticator):
 
     oidc_server = Unicode(
@@ -228,6 +234,10 @@ class BricsAuthenticator(Authenticator):
                     "jwt_audience": self.jwt_audience,
                     "jwt_leeway": self.jwt_leeway,
                 },
+            ),
+            (
+                r"/logout",
+                BricsLogoutHandler
             )
         ]
 
