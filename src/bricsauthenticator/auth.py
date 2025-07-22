@@ -194,7 +194,7 @@ class BricsLoginHandler(BaseHandler):
 
 class BricsLogoutHandler(LogoutHandler):
     async def render_logout_page(self):
-        redirect_url=f"/_oidc/sign_out?rd={urllib.parse.encode('/jupyter', safe='')}"
+        redirect_url=f"{self.hub.base_url}/_oidc/sign_out?rd={urllib.parse.encode('/jupyter', safe='')}"
         self.log.debug(f"BricsLogoutHandler redirecting to {redirect_url}")
         self.redirect(redirect_url)
 
