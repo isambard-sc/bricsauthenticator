@@ -580,3 +580,50 @@ class TestBricsLoginHandler:
             handler.jwt_leeway = leeway_seconds
             decoded = handler._decode_jwt(token, signing_key, [algorithm])
             assert decoded == payload
+
+
+class TestBricsLogoutHandler:
+
+    @pytest.fixture
+    def handler(self):
+        # Create a real Application instance with necessary settings
+        application = Application()
+        application.settings = {
+            "hub": MagicMock(base_url="/hub/"),  # Mock 'hub' with base_url as a string
+            #"cookie_secret": b"secret",  # Add other required settings
+            #"log_function": MagicMock(),  # Mock the application-level logger
+        }
+
+        # Mock request with a connection attribute and empty headers
+        request = MagicMock(spec=HTTPServerRequest)
+        request.connection = MagicMock()  # Add the 'connection' attribute
+        request.headers = HTTPHeaders({})
+
+        # Initialize BricsLogoutHandler with the mocked application, request, and required arguments
+        handler_instance = BricsLogoutHandler(
+            application,
+            request,
+            logout_redirect_url="/app/endpoint/sign_out?param=value"
+        )
+        return handler_instance
+
+    @pytest.mark.asyncio
+    async def test_render_logout_page_with_redirect(self, handler):
+
+        #await handler.render_logout_page()
+
+        # Check that `handler.redirect` is called with expected argument
+
+        raise NotImplementedError
+
+
+    @pytest.mark.asyncio
+    async def test_render_logout_page_default(self, handler):
+
+        handler.logout_redirect_url = None
+
+        #await handler.render_logout_page()
+
+        # Check that `super().render_logout_page` is called
+
+        raise NotImplementedError
