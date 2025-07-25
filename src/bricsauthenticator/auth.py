@@ -193,11 +193,16 @@ class BricsLoginHandler(BaseHandler):
 
 
 class BricsLogoutHandler(LogoutHandler):
-    async def render_logout_page(self):
-        redirect_url=f"{self.base_url}_oidc/sign_out?rd={urllib.parse.quote('/jupyter', safe='')}"
-        self.log.debug(f"BricsLogoutHandler redirecting to {redirect_url}")
-        self.redirect(redirect_url)
+    def initialize(logout_redirect_url: str | None):
+        self.logout_redirect_url = logout_redirect_url
 
+    async def render_logout_page(self):
+        if self.logout_redirect_url:
+            self.log.debug(f"BricsLogoutHandler redirecting to {self.logout_redirect_url}")
+            self.redirect(self.logout_redirect_url)
+        else:
+            self.log.debug(f"BricsLogoutHandler delegating to parent render_logout_page()")
+            super().render_logout_page()
 
 class BricsAuthenticator(Authenticator):
 
@@ -225,6 +230,12 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    logout_redirect_url = Unicode(
+        default_value=f"/jupyter/_oidc/sign_out?rd={urllib.parse.quote('/jupyter', safe='')}",
+        help="A URL to redirect to after JupyterHub logout has been handled instead of the default",
+        allow_none=True,
+    ).tag(config=True)
+
     def get_handlers(self, app):
         return [
             (
@@ -239,7 +250,10 @@ class BricsAuthenticator(Authenticator):
             ),
             (
                 r"/logout",
-                BricsLogoutHandler
+                BricsLogoutHandler,
+                {
+                    "logout_redirect_url": self.logout_redirect_url
+                }
             )
         ]
 
