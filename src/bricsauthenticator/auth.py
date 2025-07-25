@@ -193,7 +193,7 @@ class BricsLoginHandler(BaseHandler):
 
 
 class BricsLogoutHandler(LogoutHandler):
-    def initialize(logout_redirect_url: str | None):
+    def initialize(self, logout_redirect_url: str | None):
         self.logout_redirect_url = logout_redirect_url
 
     async def render_logout_page(self):
@@ -201,7 +201,7 @@ class BricsLogoutHandler(LogoutHandler):
             self.log.debug(f"BricsLogoutHandler redirecting to {self.logout_redirect_url}")
             self.redirect(self.logout_redirect_url)
         else:
-            self.log.debug(f"BricsLogoutHandler delegating to parent render_logout_page()")
+            self.log.debug("BricsLogoutHandler delegating to parent render_logout_page()")
             super().render_logout_page()
 
 class BricsAuthenticator(Authenticator):
