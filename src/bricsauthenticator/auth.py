@@ -204,6 +204,7 @@ class BricsLogoutHandler(LogoutHandler):
             self.log.debug("BricsLogoutHandler delegating to parent render_logout_page()")
             super().render_logout_page()
 
+
 class BricsAuthenticator(Authenticator):
 
     oidc_server = Unicode(
@@ -248,13 +249,7 @@ class BricsAuthenticator(Authenticator):
                     "jwt_leeway": self.jwt_leeway,
                 },
             ),
-            (
-                r"/logout",
-                BricsLogoutHandler,
-                {
-                    "logout_redirect_url": self.logout_redirect_url
-                }
-            )
+            (r"/logout", BricsLogoutHandler, {"logout_redirect_url": self.logout_redirect_url}),
         ]
 
     async def authenticate(self, *args, **kwargs):
