@@ -202,7 +202,7 @@ class BricsLogoutHandler(LogoutHandler):
             self.redirect(self.logout_redirect_url)
         else:
             self.log.debug("BricsLogoutHandler delegating to parent render_logout_page()")
-            super().render_logout_page()
+            await super().render_logout_page()
 
 
 class BricsAuthenticator(Authenticator):
