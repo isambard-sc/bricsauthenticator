@@ -612,8 +612,17 @@ class TestBricsLogoutHandler:
 
         handler.logout_redirect_url = None
 
-        # await handler.render_logout_page()
+        with (
+            patch("bricsauthenticator.auth.LogoutHandler.render_logout_page") as mock_parent_render_logout_page,
+            patch("bricsauthenticator.auth.BricsLogoutHandler.redirect") as mock_redirect
+        ):
+            await handler.render_logout_page()
 
-        # Check that `super().render_logout_page` is called
+            # Check that `super().render_logout_page` is called
+            mock_calls = mock_parent_render_logout_page.mock_calls
+            assert len(mock_calls) == 1
+            assert len(mock_calls[0].args) == 0
 
-        raise NotImplementedError
+            # Check that `BricsLogoutHandler.redirect`` is not called
+            mock_calls = mock_redirect
+            assert len(mock_calls) == 0
