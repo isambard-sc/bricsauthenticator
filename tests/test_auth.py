@@ -660,10 +660,7 @@ class TestBricsLogoutHandler:
         await handler.render_logout_page()
 
         # Check that `handler.redirect` is called with expected argument
-        mock_calls = handler.redirect.mock_calls
-        assert len(mock_calls) == 1
-        assert len(mock_calls[0].args) == 1
-        assert mock_calls[0].args[0] == handler.logout_redirect_url
+        assert handler.redirect.mock_calls == [call(handler.logout_redirect_url)]
 
 
     @pytest.mark.asyncio
@@ -678,10 +675,7 @@ class TestBricsLogoutHandler:
             await handler.render_logout_page()
 
             # Check that `super().render_logout_page` is called
-            mock_calls = mock_parent_render_logout_page.mock_calls
-            assert len(mock_calls) == 1
-            assert len(mock_calls[0].args) == 0
+            assert mock_parent_render_logout_page.mock_calls == [call()]
 
             # Check that `BricsLogoutHandler.redirect` is not called
-            mock_calls = mock_redirect
-            assert len(mock_calls) == 0
+            assert len(mock_redirect.mock_calls) == 0
