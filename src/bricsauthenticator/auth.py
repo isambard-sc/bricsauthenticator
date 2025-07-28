@@ -37,7 +37,7 @@ class BricsLoginHandler(BaseHandler):
         return jwt.PyJWKClient(jwks_uri, headers=headers)
 
     def _logout_redirect(self):
-        self.log.debug(f"BricsLoginHandler auto-redirecting to {self.settings['logout_url']}")
+        self.log.info(f"BricsLoginHandler auto-redirecting to {self.settings['logout_url']}")
         self.redirect(self.settings["logout_url"])
         raise web.Finish
 
@@ -62,6 +62,7 @@ class BricsLoginHandler(BaseHandler):
         username = decoded_token.get("short_name")
         if not username:
             if self.invalid_jwt_logout:
+                self.log.info("Invalid token: Missing short_name claim")
                 self._logout_redirect()
             else:
                 raise web.HTTPError(401, "Invalid token: Missing short_name claim")
@@ -70,6 +71,7 @@ class BricsLoginHandler(BaseHandler):
 
         if not len(auth_state) > 0:
             if self.invalid_jwt_logout:
+                self.log.info("No projects with valid platform")
                 self._logout_redirect()
             else:
                 raise web.HTTPError(403, "No projects with valid platform")
@@ -121,6 +123,7 @@ class BricsLoginHandler(BaseHandler):
             )
         except jwt.InvalidTokenError as e:
             if self.invalid_jwt_logout:
+                self.log.info(f"Invalid JWT token: {str(e)}")
                 self._logout_redirect()
             else:
                 raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
