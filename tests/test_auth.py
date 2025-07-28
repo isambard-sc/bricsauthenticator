@@ -50,6 +50,7 @@ class TestBricsLoginHandler:
             "hub": MagicMock(base_url="/hub/"),  # Mock 'hub' with base_url as a string
             "cookie_secret": b"secret",  # Add other required settings
             "log_function": MagicMock(),  # Mock the application-level logger
+            "logout_url": "/hub/logout",
         }
 
         # Mock request with a connection attribute and empty headers
@@ -77,7 +78,7 @@ class TestBricsLoginHandler:
             with pytest.raises(Finish):
                 handler._logout_redirect()
 
-            assert mock_redirect.mock_calls == [call("/logout")]
+            assert mock_redirect.mock_calls == [call(handler.settings["logout_url"])]
 
     def test_extract_token_missing_header(self, handler):
         handler.request.headers = HTTPHeaders({})
@@ -155,7 +156,7 @@ class TestBricsLoginHandler:
             with pytest.raises(Finish):
                 handler._decode_jwt("fake_token", mock_signing_key, ["RS256"])
 
-            assert mock_redirect.mock_calls == [call("/logout")]
+            assert mock_redirect.mock_calls == [call(handler.settings["logout_url"])]
 
     def test_decode_jwt_failure_with_exception(self, handler):
         handler.jwt_audience = "zenith-jupyter"
@@ -394,7 +395,7 @@ class TestBricsLoginHandler:
             with pytest.raises(Finish):
                 await no_valid_projects_handler.get()
 
-            assert mock_redirect.mock_calls == [call("/logout")]
+            assert mock_redirect.mock_calls == [call(no_valid_projects_handler.settings["logout_url"])]
 
     @pytest.mark.asyncio
     async def test_get_no_valid_projects_exception(self, no_valid_projects_handler: BricsLoginHandler):
