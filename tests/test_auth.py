@@ -597,11 +597,15 @@ class TestBricsLogoutHandler:
     @pytest.mark.asyncio
     async def test_render_logout_page_with_redirect(self, handler):
 
-        # await handler.render_logout_page()
+        handler.redirect = MagicMock()
+        await handler.render_logout_page()
 
         # Check that `handler.redirect` is called with expected argument
+        mock_calls = handler.redirect.mock_calls
+        assert len(mock_calls) == 1
+        assert len(mock_calls[0].args) == 1
+        assert mock_calls[0].args[0] == handler.logout_redirect_url
 
-        raise NotImplementedError
 
     @pytest.mark.asyncio
     async def test_render_logout_page_default(self, handler):
