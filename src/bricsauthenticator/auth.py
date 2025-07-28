@@ -38,7 +38,7 @@ class BricsLoginHandler(BaseHandler):
 
     def _logout_redirect(self):
         self.redirect("/logout")
-        # TODO Determine whether raising web.Finish here is necessary (i.e. does `redirect` do the equivalent of 
+        # TODO Determine whether raising web.Finish here is necessary (i.e. does `redirect` do the equivalent of
         #    raising this itself?)
         raise web.Finish
 
