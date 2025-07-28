@@ -3,12 +3,12 @@ import json
 import time
 from contextlib import AbstractContextManager, nullcontext
 from datetime import timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, call
 
 import jwt
 import pytest
 from tornado.httputil import HTTPHeaders, HTTPServerRequest
-from tornado.web import Application, HTTPError
+from tornado.web import Application, HTTPError, Finish
 
 from bricsauthenticator.auth import BricsAuthenticator, BricsLoginHandler, BricsLogoutHandler
 
