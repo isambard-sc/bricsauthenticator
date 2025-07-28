@@ -623,6 +623,6 @@ class TestBricsLogoutHandler:
             assert len(mock_calls) == 1
             assert len(mock_calls[0].args) == 0
 
-            # Check that `BricsLogoutHandler.redirect`` is not called
+            # Check that `BricsLogoutHandler.redirect` is not called
             mock_calls = mock_redirect
             assert len(mock_calls) == 0
