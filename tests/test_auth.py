@@ -27,11 +27,12 @@ class TestBricsAuthenticator:
         assert len(handlers) == 2
         assert handlers[0][0] == r"/login"
         assert handlers[0][1] == BricsLoginHandler
-        assert len(handlers[0][2]) == 4
+        assert len(handlers[0][2]) == 5
         assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
         assert handlers[0][2]["platform"] == authenticator.brics_platform
         assert handlers[0][2]["jwt_audience"] == authenticator.jwt_audience
         assert handlers[0][2]["jwt_leeway"] == authenticator.jwt_leeway
+        assert handlers[0][2]["invalid_jwt_logout"] == authenticator.invalid_jwt_logout
 
         assert handlers[1][0] == r"/logout"
         assert handlers[1][1] == BricsLogoutHandler
@@ -64,10 +65,21 @@ class TestBricsLoginHandler:
             jwt_audience="dummy-audience",
             jwt_leeway=5,
             oidc_server="https://example.com",
+            invalid_jwt_logout=True,
         )
         handler_instance.http_client = AsyncMock()
         handler_instance.jwks_client_factory = MagicMock()
         return handler_instance
+
+
+    def test_logout_redirect(self, handler: BricsLoginHandler):
+        
+        with patch("bricsauthenticator.auth.BricsLoginHandler.redirect") as mock_redirect:
+            with pytest.raises(Finish):
+                handler._logout_redirect()
+
+            assert mock_redirect.mock_calls == [call("/logout")]
+
 
     def test_extract_token_missing_header(self, handler):
         handler.request.headers = HTTPHeaders({})
@@ -132,8 +144,26 @@ class TestBricsLoginHandler:
             assert result == decoded_token
             assert result == decoded_token
 
-    def test_decode_jwt_failure(self, handler):
+
+    def test_decode_jwt_failure_with_redirect(self, handler):
         handler.jwt_audience = "zenith-jupyter"
+        mock_signing_key = MagicMock()
+        mock_signing_key.key = "fake_key"
+
+        with (
+            patch("jwt.decode", side_effect=jwt.InvalidTokenError("Invalid token")),
+            patch("bricsauthenticator.auth.BricsLoginHandler.redirect") as mock_redirect
+        ):
+
+            with pytest.raises(Finish):
+                handler._decode_jwt("fake_token", mock_signing_key, ["RS256"])
+
+            assert mock_redirect.mock_calls == [call("/logout")]
+
+
+    def test_decode_jwt_failure_with_exception(self, handler):
+        handler.jwt_audience = "zenith-jupyter"
+        handler.invalid_jwt_logout = False
         mock_signing_key = MagicMock()
         mock_signing_key.key = "fake_key"
 
@@ -141,6 +171,7 @@ class TestBricsLoginHandler:
             with pytest.raises(HTTPError) as exc_info:
                 handler._decode_jwt("fake_token", mock_signing_key, ["RS256"])
             assert exc_info.value.status_code == 401
+
 
     def test_normalize_projects_invalid_json(self, handler):
         decoded_token = {"projects": "invalid_json"}
@@ -264,6 +295,7 @@ class TestBricsLoginHandler:
             oidc_server="https://example.com",
             jwt_audience="dummy-audience",
             jwt_leeway=5,
+            invalid_jwt_logout=True,
         )
 
         # Mock handler dependencies
@@ -308,34 +340,41 @@ class TestBricsLoginHandler:
         handler.set_login_cookie.assert_called_once_with(user)
         handler.redirect.assert_called_once_with("/home")
 
-    @pytest.mark.parametrize(
-        "platform, projects",
-        [
-            pytest.param("portal.example.notebooks.shared", {}, id="empty project claim"),
+
+    @pytest.fixture(params=[
+            pytest.param({
+                "platform": "portal.example.notebooks.shared", "projects": {}
+                }, 
+                id="empty project claim"
+            ),
             pytest.param(
-                "portal.example.other.shared",
                 {
-                    "project1": {
-                        "name": "Project 1",
-                        "resources": [
-                            {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
-                            {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
-                        ],
-                    },
-                    "project2": {
-                        "name": "Project 2",
-                        "resources": [
-                            {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}
-                        ],
-                    },
+                    "platform": "portal.example.other.shared",
+                    "projects": {
+                        "project1": {
+                            "name": "Project 1",
+                            "resources": [
+                                {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project1"},
+                                {"name": "portal.example.clusters.shared", "username": "test_cluster_user.project1"},
+                            ],
+                        },
+                        "project2": {
+                            "name": "Project 2",
+                            "resources": [
+                                {"name": "portal.example.notebooks.shared", "username": "test_notebook_user.project2"}
+                            ],
+                        },
+                    }
                 },
                 id="no projects with resource name matching platform",
             ),
-        ],
+        ]
     )
-    @pytest.mark.asyncio
-    async def test_get_no_valid_projects_exception(self, handler, platform: str, projects: dict[str, dict]):
-        handler.platform = platform
+    def no_valid_projects_handler(self, request: pytest.FixtureRequest, handler: BricsLoginHandler):
+        """
+        BricsLoginHandler with mocked _decode_jwt that returns a project claim with no valid projects
+        """
+        handler.platform = request.param["platform"]
 
         # Mock all methods up until a the token is decoded
         handler._extract_token = MagicMock()
@@ -349,16 +388,34 @@ class TestBricsLoginHandler:
             "iss": "https://example.com",
             "iat": 12344,
             "short_name": "user",
-            "projects": projects,
+            "projects": request.param["projects"],
         }
 
         # Mock the JWT decoding function and its return value
         handler._decode_jwt = MagicMock(return_value=decoded_token)
 
-        with pytest.raises(HTTPError, match="No projects with valid platform") as exc_info:
-            await handler.get()
+        return handler
 
+    
+    @pytest.mark.asyncio
+    async def test_get_no_valid_projects_redirect(self, no_valid_projects_handler: BricsLoginHandler):
+ 
+        with patch("bricsauthenticator.auth.BricsLoginHandler.redirect") as mock_redirect:
+            with pytest.raises(Finish):
+                await no_valid_projects_handler.get()
+
+            assert mock_redirect.mock_calls == [call("/logout")]
+
+
+    @pytest.mark.asyncio
+    async def test_get_no_valid_projects_exception(self, no_valid_projects_handler: BricsLoginHandler):
+        no_valid_projects_handler.invalid_jwt_logout = False
+ 
+        with pytest.raises(HTTPError, match="No projects with valid platform") as exc_info:
+            await no_valid_projects_handler.get()
+ 
         assert exc_info.value.status_code == 403
+
 
     @pytest.mark.parametrize(
         "decoded_token, expected_output",
@@ -462,6 +519,7 @@ class TestBricsLoginHandler:
         Check that JWTs with iat less than or equal to current time + leeway are valid
         """
 
+        handler.invalid_jwt_logout = False
         signing_key = MagicMock(spec=jwt.PyJWK)
         signing_key.key = "test-secret"
         algorithm = "HS256"
@@ -525,6 +583,7 @@ class TestBricsLoginHandler:
         Check that JWTs with exp greater than current time - leeway are valid
         """
 
+        handler.invalid_jwt_logout = False
         signing_key = MagicMock(spec=jwt.PyJWK)
         signing_key.key = "test-secret"
         algorithm = "HS256"
