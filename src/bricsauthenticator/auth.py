@@ -37,7 +37,8 @@ class BricsLoginHandler(BaseHandler):
         return jwt.PyJWKClient(jwks_uri, headers=headers)
 
     def _logout_redirect(self):
-        self.redirect("/logout")
+        self.log.debug(f"BricsLoginHandler auto-redirecting to {self.settings['logout_url']}")
+        self.redirect(self.settings["logout_url"])
         # TODO Determine whether raising web.Finish here is necessary (i.e. does `redirect` do the equivalent of
         #    raising this itself?)
         raise web.Finish
