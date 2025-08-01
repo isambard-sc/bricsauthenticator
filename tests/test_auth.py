@@ -368,12 +368,6 @@ class TestBricsLoginHandler:
         """
         handler.platform = request.param["platform"]
 
-        # Mock all methods up until a the token is decoded
-        handler._extract_token = MagicMock()
-        handler._fetch_oidc_config = AsyncMock()
-        handler._parse_oidc_config = MagicMock(return_value=(MagicMock, MagicMock))
-        handler._fetch_signing_key = MagicMock()
-
         decoded_token = {
             "aud": "zenith-jupyter",
             "exp": 12345,
@@ -391,6 +385,12 @@ class TestBricsLoginHandler:
     @pytest.mark.asyncio
     async def test_get_no_valid_projects_redirect(self, no_valid_projects_handler: BricsLoginHandler):
 
+        # Mock all methods up until the token is decoded
+        no_valid_projects_handler._extract_token = MagicMock()
+        no_valid_projects_handler._fetch_oidc_config = AsyncMock()
+        no_valid_projects_handler._parse_oidc_config = MagicMock(return_value=(MagicMock, MagicMock))
+        no_valid_projects_handler._fetch_signing_key = MagicMock()
+
         with patch("bricsauthenticator.auth.BricsLoginHandler.redirect") as mock_redirect:
             with pytest.raises(Finish):
                 await no_valid_projects_handler.get()
@@ -400,6 +400,12 @@ class TestBricsLoginHandler:
     @pytest.mark.asyncio
     async def test_get_no_valid_projects_exception(self, no_valid_projects_handler: BricsLoginHandler):
         no_valid_projects_handler.invalid_jwt_logout = False
+
+        # Mock all methods up until the token is decoded
+        no_valid_projects_handler._extract_token = MagicMock()
+        no_valid_projects_handler._fetch_oidc_config = AsyncMock()
+        no_valid_projects_handler._parse_oidc_config = MagicMock(return_value=(MagicMock, MagicMock))
+        no_valid_projects_handler._fetch_signing_key = MagicMock()
 
         with pytest.raises(HTTPError, match="No projects with valid platform") as exc_info:
             await no_valid_projects_handler.get()
