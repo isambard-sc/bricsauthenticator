@@ -627,8 +627,6 @@ class TestBricsLogoutHandler:
         application = Application()
         application.settings = {
             "hub": MagicMock(base_url="/hub/"),  # Mock 'hub' with base_url as a string
-            # "cookie_secret": b"secret",  # Add other required settings
-            # "log_function": MagicMock(),  # Mock the application-level logger
         }
 
         # Mock request with a connection attribute and empty headers
