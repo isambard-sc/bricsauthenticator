@@ -3,13 +3,14 @@ JupyterHub `Authenticator` for the BriCS JupyterHub service
 """
 
 import json
+import urllib.parse
 
 import jwt
 from jupyterhub.auth import Authenticator
-from jupyterhub.handlers import BaseHandler
+from jupyterhub.handlers import BaseHandler, LogoutHandler
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
-from traitlets import Float, Unicode
+from traitlets import Bool, Float, Unicode
 
 
 class BricsLoginHandler(BaseHandler):
@@ -19,6 +20,7 @@ class BricsLoginHandler(BaseHandler):
         platform: str,
         jwt_audience: str,
         jwt_leeway: float,
+        invalid_jwt_logout: bool,
         http_client=None,
         jwks_client_factory=None,
     ):
@@ -26,12 +28,18 @@ class BricsLoginHandler(BaseHandler):
         self.platform = platform
         self.jwt_audience = jwt_audience
         self.jwt_leeway = jwt_leeway
+        self.invalid_jwt_logout = invalid_jwt_logout
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 
     def _default_jwks_client_factory(self, jwks_uri: str):
         headers = {"User-Agent": f"PyJWT/{jwt.__version__}"}
         return jwt.PyJWKClient(jwks_uri, headers=headers)
+
+    def _logout_redirect(self):
+        self.log.info(f"BricsLoginHandler auto-redirecting to {self.settings['logout_url']}")
+        self.redirect(self.settings["logout_url"])
+        raise web.Finish
 
     async def get(self):
 
@@ -53,12 +61,20 @@ class BricsLoginHandler(BaseHandler):
 
         username = decoded_token.get("short_name")
         if not username:
-            raise web.HTTPError(401, "Invalid token: Missing short_name claim")
+            if self.invalid_jwt_logout:
+                self.log.info("Invalid token: Missing short_name claim")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
 
         auth_state = self._auth_state_from_projects(projects, self.platform)
 
         if not len(auth_state) > 0:
-            raise web.HTTPError(403, "No projects with valid platform")
+            if self.invalid_jwt_logout:
+                self.log.info("No projects with valid platform")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(403, "No projects with valid platform")
 
         user = await self.auth_to_user({"name": username, "auth_state": auth_state})
         self.set_login_cookie(user)
@@ -106,7 +122,11 @@ class BricsLoginHandler(BaseHandler):
                 leeway=self.jwt_leeway,  # time skew tolerance
             )
         except jwt.InvalidTokenError as e:
-            raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
+            if self.invalid_jwt_logout:
+                self.log.info(f"Invalid JWT token: {str(e)}")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(401, f"Invalid JWT token: {str(e)}")
 
     def _normalize_projects(self, decoded_token: dict) -> dict:
         projects = decoded_token.get("projects")
@@ -191,6 +211,19 @@ class BricsLoginHandler(BaseHandler):
         return auth_state
 
 
+class BricsLogoutHandler(LogoutHandler):
+    def initialize(self, logout_redirect_url: str | None):
+        self.logout_redirect_url = logout_redirect_url
+
+    async def render_logout_page(self):
+        if self.logout_redirect_url:
+            self.log.debug(f"BricsLogoutHandler redirecting to {self.logout_redirect_url}")
+            self.redirect(self.logout_redirect_url)
+        else:
+            self.log.debug("BricsLogoutHandler delegating to parent render_logout_page()")
+            await super().render_logout_page()
+
+
 class BricsAuthenticator(Authenticator):
 
     oidc_server = Unicode(
@@ -217,6 +250,18 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    logout_redirect_url = Unicode(
+        default_value=f"/jupyter/_oidc/sign_out?rd={urllib.parse.quote('/jupyter', safe='')}",
+        help="A URL to redirect to after JupyterHub logout has been handled instead of the default",
+        allow_none=True,
+    ).tag(config=True)
+
+    invalid_jwt_logout = Bool(
+        default_value=True,
+        help="If True, redirect to /logout when an invalid JWT is encountered instead of showing HTTP error page",
+        allow_none=False,
+    ).tag(config=True)
+
     def get_handlers(self, app):
         return [
             (
@@ -227,8 +272,10 @@ class BricsAuthenticator(Authenticator):
                     "platform": self.brics_platform,
                     "jwt_audience": self.jwt_audience,
                     "jwt_leeway": self.jwt_leeway,
+                    "invalid_jwt_logout": self.invalid_jwt_logout,
                 },
-            )
+            ),
+            (r"/logout", BricsLogoutHandler, {"logout_redirect_url": self.logout_redirect_url}),
         ]
 
     async def authenticate(self, *args, **kwargs):
