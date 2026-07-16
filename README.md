@@ -80,7 +80,7 @@ Use the `dev` optional dependency group to install development tools (linting, f
 This is useful in combination with an editable install from a local copy of the repository. The local copy can then be worked with using the development tools.
 
 ```shell
-/path/to/my-venv/bin/python -m pip install -e --group dev '/path/to/bricsauthenticator'
+/path/to/my-venv/bin/python -m pip install --group dev -e '/path/to/bricsauthenticator'
 ```
 
 ### Development install in a Conda environment

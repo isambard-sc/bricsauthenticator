@@ -28,7 +28,7 @@ dependencies = [
 [dependency-groups]
 # Install development dependencies using the dev group, e.g. for local
 # editable install from current directory:
-#   python -m pip install -e --group dev .
+#   python -m pip install --group dev -e .
 dev = [
     "pytest",
     "pytest-asyncio",

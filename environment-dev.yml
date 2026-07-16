@@ -13,4 +13,4 @@ dependencies:
 
   - pip
   - pip:
-    - --editable --group dev .
+    - --group dev --editable .
