@@ -57,26 +57,33 @@ class BricsLoginHandler(BaseHandler):
 
         self.log.debug("Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items()))
 
-        projects = self._normalize_projects(decoded_token)
+        # If the user is an admin
+        if (groups := decoded_token.get("groups")) and "/BriCSAdmins" in groups:
+            username = decoded_token.get("preferred_username")
+            auth_state = {}
+            groups = ["brics-admins"]
+        else:
+            projects = self._normalize_projects(decoded_token)
 
-        username = decoded_token.get("short_name")
-        if not username:
-            if self.invalid_jwt_logout:
-                self.log.info("Invalid token: Missing short_name claim")
-                self._logout_redirect()
-            else:
-                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
+            username = decoded_token.get("short_name")
+            if not username:
+                if self.invalid_jwt_logout:
+                    self.log.info("Invalid token: Missing short_name claim")
+                    self._logout_redirect()
+                else:
+                    raise web.HTTPError(401, "Invalid token: Missing short_name claim")
 
-        auth_state = self._auth_state_from_projects(projects, self.platform)
+            auth_state = self._auth_state_from_projects(projects, self.platform)
+            groups = []
 
-        if not len(auth_state) > 0:
-            if self.invalid_jwt_logout:
-                self.log.info("No projects with valid platform")
-                self._logout_redirect()
-            else:
-                raise web.HTTPError(403, "No projects with valid platform")
+            if not len(auth_state) > 0:
+                if self.invalid_jwt_logout:
+                    self.log.info("No projects with valid platform")
+                    self._logout_redirect()
+                else:
+                    raise web.HTTPError(403, "No projects with valid platform")
 
-        user = await self.auth_to_user({"name": username, "auth_state": auth_state})
+        user = await self.auth_to_user({"name": username, "auth_state": auth_state, "groups": groups})
         self.set_login_cookie(user)
         next_url = self.get_next_url(user)
         self.redirect(next_url)
@@ -115,7 +122,7 @@ class BricsLoginHandler(BaseHandler):
                 algorithms=signing_algos,
                 options={
                     "verify_signature": True,
-                    "require": ["aud", "exp", "iss", "iat", "short_name", "projects"],
+                    "require": ["aud", "exp", "iss", "iat"],
                 },
                 audience=self.jwt_audience,  # make it configurable
                 issuer=self.oidc_server,
