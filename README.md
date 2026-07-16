@@ -75,12 +75,12 @@ Install from the sdist or wheel placed in the `dist/` directory
 
 ### Install with development dependencies
 
-Use the `[dev]` optional dependency to install development tools (linting, formatting, testing etc.) alongside the `bricsauthenticator` package.
+Use the `dev` optional dependency group to install development tools (linting, formatting, testing etc.) alongside the `bricsauthenticator` package.
 
 This is useful in combination with an editable install from a local copy of the repository. The local copy can then be worked with using the development tools.
 
 ```shell
-/path/to/my-venv/bin/python -m pip install -e '/path/to/bricsauthenticator[dev]'
+/path/to/my-venv/bin/python -m pip install -e --group dev '/path/to/bricsauthenticator'
 ```
 
 ### Development install in a Conda environment

@@ -25,10 +25,10 @@ dependencies = [
     "batchspawner >= 1.3.0"
 ]
 
-[project.optional-dependencies]
-# Install development dependencies using the [dev] variant, e.g. for local
+[dependency-groups]
+# Install development dependencies using the dev group, e.g. for local
 # editable install from current directory:
-#   python -m pip install -e ".[dev]"
+#   python -m pip install -e --group dev .
 dev = [
     "pytest",
     "pytest-asyncio",
