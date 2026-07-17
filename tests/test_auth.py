@@ -332,7 +332,7 @@ class TestBricsLoginHandler:
         handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
         handler._normalize_projects.assert_called_once_with(decoded_token)
         handler._auth_state_from_projects.assert_called_once_with(projects, handler.platform)
-        handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": auth_state})
+        handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": auth_state, "groups": []})
         handler.set_login_cookie.assert_called_once_with(user)
         handler.redirect.assert_called_once_with("/home")
 
