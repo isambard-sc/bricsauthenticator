@@ -21,6 +21,8 @@ class BricsLoginHandler(BaseHandler):
         jwt_audience: str,
         jwt_leeway: float,
         invalid_jwt_logout: bool,
+        admin_group_claim: str,
+        admin_group_name: str,
         http_client=None,
         jwks_client_factory=None,
     ):
@@ -29,6 +31,8 @@ class BricsLoginHandler(BaseHandler):
         self.jwt_audience = jwt_audience
         self.jwt_leeway = jwt_leeway
         self.invalid_jwt_logout = invalid_jwt_logout
+        self.admin_group_claim = admin_group_claim
+        self.admin_group_name = admin_group_name
         self.http_client = http_client or AsyncHTTPClient()
         self.jwks_client_factory = jwks_client_factory or self._default_jwks_client_factory
 
@@ -41,8 +45,43 @@ class BricsLoginHandler(BaseHandler):
         self.redirect(self.settings["logout_url"])
         raise web.Finish
 
-    async def get(self):
+    def _token_to_user(self, token) -> dict:
+        """
+        Take a decoded JWT token and convert it into an authenticated user description
+        """
+        # If the user is an admin
+        groups = []
+        if self.admin_group_claim in token.get("groups", []):
+            groups.append(self.admin_group_name)
 
+        projects = self._normalize_projects(token)
+
+        auth_state = self._auth_state_from_projects(projects, self.platform)
+
+        # Only admins can have an empty filtered project dict (auth_state)
+        if not (auth_state or self.admin_group_name in groups):
+            if self.invalid_jwt_logout:
+                self.log.info("No projects with valid platform")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(403, "No projects with valid platform")
+
+        username = token.get("short_name")
+        if not username and self.admin_group_name in groups:
+            # Fall back to preferred_username if short_name not present,
+            # but only for admins
+            username = token.get("preferred_username")
+
+        if not username:
+            if self.invalid_jwt_logout:
+                self.log.info("Invalid token: Missing username claim (short_name or preferred_username")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
+
+        return {"name": username, "auth_state": auth_state, "groups": groups}
+
+    async def get(self):
         self.log.debug(
             "Estimated request header size: %d bytes",
             sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()),
@@ -57,26 +96,9 @@ class BricsLoginHandler(BaseHandler):
 
         self.log.debug("Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items()))
 
-        projects = self._normalize_projects(decoded_token)
+        user_model = self._token_to_user(decoded_token)
 
-        username = decoded_token.get("short_name")
-        if not username:
-            if self.invalid_jwt_logout:
-                self.log.info("Invalid token: Missing short_name claim")
-                self._logout_redirect()
-            else:
-                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
-
-        auth_state = self._auth_state_from_projects(projects, self.platform)
-
-        if not len(auth_state) > 0:
-            if self.invalid_jwt_logout:
-                self.log.info("No projects with valid platform")
-                self._logout_redirect()
-            else:
-                raise web.HTTPError(403, "No projects with valid platform")
-
-        user = await self.auth_to_user({"name": username, "auth_state": auth_state})
+        user = await self.auth_to_user(user_model)
         self.set_login_cookie(user)
         next_url = self.get_next_url(user)
         self.redirect(next_url)
@@ -115,7 +137,7 @@ class BricsLoginHandler(BaseHandler):
                 algorithms=signing_algos,
                 options={
                     "verify_signature": True,
-                    "require": ["aud", "exp", "iss", "iat", "short_name", "projects"],
+                    "require": ["aud", "exp", "iss", "iat"],
                 },
                 audience=self.jwt_audience,  # make it configurable
                 issuer=self.oidc_server,
@@ -262,6 +284,18 @@ class BricsAuthenticator(Authenticator):
         allow_none=False,
     ).tag(config=True)
 
+    admin_group_claim = Unicode(
+        default_value="/BriCSAdmins",
+        help="The name of the group in the groups claim to map to admin users",
+        allow_none=False,
+    ).tag(config=True)
+
+    admin_group_name = Unicode(
+        default_value="brics-admins",
+        help="The name of the JupyterHub group to put admins in",
+        allow_none=False,
+    ).tag(config=True)
+
     def get_handlers(self, app):
         return [
             (
@@ -273,6 +307,8 @@ class BricsAuthenticator(Authenticator):
                     "jwt_audience": self.jwt_audience,
                     "jwt_leeway": self.jwt_leeway,
                     "invalid_jwt_logout": self.invalid_jwt_logout,
+                    "admin_group_claim": self.admin_group_claim,
+                    "admin_group_name": self.admin_group_name,
                 },
             ),
             (r"/logout", BricsLogoutHandler, {"logout_redirect_url": self.logout_redirect_url}),

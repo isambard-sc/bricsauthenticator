@@ -27,7 +27,7 @@ class TestBricsAuthenticator:
         assert len(handlers) == 2
         assert handlers[0][0] == r"/login"
         assert handlers[0][1] == BricsLoginHandler
-        assert len(handlers[0][2]) == 5
+        assert len(handlers[0][2]) == 7
         assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
         assert handlers[0][2]["platform"] == authenticator.brics_platform
         assert handlers[0][2]["jwt_audience"] == authenticator.jwt_audience
@@ -67,6 +67,8 @@ class TestBricsLoginHandler:
             jwt_leeway=5,
             oidc_server="https://example.com",
             invalid_jwt_logout=True,
+            admin_group_claim="/BriCSAdmins",
+            admin_group_name="brics-admins",
         )
         handler_instance.http_client = AsyncMock()
         handler_instance.jwks_client_factory = MagicMock()
@@ -269,6 +271,36 @@ class TestBricsLoginHandler:
         result = handler._auth_state_from_projects(projects=normalized_projects, platform=platform)
         assert result == expected_result
 
+    @pytest.mark.parametrize(
+        "token,expected_user",
+        [
+            pytest.param(
+                {
+                    "projects": {
+                        "p1": {
+                            "name": "P1",
+                            "resources": [{"name": "portal.dummy.platform.shared", "username": "test_user.p1"}],
+                        }
+                    },
+                    "short_name": "test_user",
+                },
+                {"name": "test_user", "auth_state": {"p1": {"name": "P1", "username": "test_user.p1"}}, "groups": []},
+                id="normal user on project",
+            ),
+            pytest.param(
+                {
+                    "preferred_username": "test-admin",
+                    "groups": ["/BriCSAdmins"],
+                },
+                {"name": "test-admin", "auth_state": {}, "groups": ["brics-admins"]},
+                id="admin user",
+            ),
+        ],
+    )
+    def test_token_to_user(self, handler, token: dict, expected_user: dict):
+        user = handler._token_to_user(token)
+        assert user == expected_user
+
     @pytest.mark.asyncio
     async def test_get(self):
         # Create a real Application instance with necessary settings
@@ -292,6 +324,8 @@ class TestBricsLoginHandler:
             jwt_audience="dummy-audience",
             jwt_leeway=5,
             invalid_jwt_logout=True,
+            admin_group_claim="/BriCSAdmins",
+            admin_group_name="brics-admins",
         )
 
         # Mock handler dependencies
@@ -332,7 +366,7 @@ class TestBricsLoginHandler:
         handler._decode_jwt.assert_called_once_with("mock_token", handler._fetch_signing_key.return_value, ["RS256"])
         handler._normalize_projects.assert_called_once_with(decoded_token)
         handler._auth_state_from_projects.assert_called_once_with(projects, handler.platform)
-        handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": auth_state})
+        handler.auth_to_user.assert_called_once_with({"name": "test_user", "auth_state": auth_state, "groups": []})
         handler.set_login_cookie.assert_called_once_with(user)
         handler.redirect.assert_called_once_with("/home")
 
