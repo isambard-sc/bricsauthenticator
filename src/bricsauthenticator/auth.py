@@ -41,8 +41,43 @@ class BricsLoginHandler(BaseHandler):
         self.redirect(self.settings["logout_url"])
         raise web.Finish
 
-    async def get(self):
+    def _token_to_user(self, token) -> dict:
+        """
+        Take a decoded JWT token and convert it into an authenticated user description
+        """
+        # If the user is an admin
+        groups = []
+        if "/BriCSAdmins" in token.get("groups", []):
+            groups.append("brics-admins")
 
+        projects = self._normalize_projects(token)
+
+        auth_state = self._auth_state_from_projects(projects, self.platform)
+
+        # Only admins can have an empty filtered project dict (auth_state)
+        if not (auth_state or "brics-admins" in groups):
+            if self.invalid_jwt_logout:
+                self.log.info("No projects with valid platform")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(403, "No projects with valid platform")
+
+        username = token.get("short_name")
+        if not username and "brics-admins" in groups:
+            # Fall back to preferred_username if short_name not present,
+            # but only for admins
+            username = token.get("preferred_username")
+
+        if not username:
+            if self.invalid_jwt_logout:
+                self.log.info("Invalid token: Missing username claim (short_name or preferred_username")
+                self._logout_redirect()
+            else:
+                raise web.HTTPError(401, "Invalid token: Missing short_name claim")
+
+        return {"name": username, "auth_state": auth_state, "groups": groups}
+
+    async def get(self):
         self.log.debug(
             "Estimated request header size: %d bytes",
             sum(len((name + ":" + value).encode("ascii")) for name, value in self.request.headers.get_all()),
@@ -57,33 +92,9 @@ class BricsLoginHandler(BaseHandler):
 
         self.log.debug("Decoded JWT Token:\n" + "\n".join(f"{key}: {value}" for key, value in decoded_token.items()))
 
-        # If the user is an admin
-        if (groups := decoded_token.get("groups")) and "/BriCSAdmins" in groups:
-            username = decoded_token.get("preferred_username")
-            auth_state = {}
-            groups = ["brics-admins"]
-        else:
-            projects = self._normalize_projects(decoded_token)
+        user_model = self._token_to_user(decoded_token)
 
-            username = decoded_token.get("short_name")
-            if not username:
-                if self.invalid_jwt_logout:
-                    self.log.info("Invalid token: Missing short_name claim")
-                    self._logout_redirect()
-                else:
-                    raise web.HTTPError(401, "Invalid token: Missing short_name claim")
-
-            auth_state = self._auth_state_from_projects(projects, self.platform)
-            groups = []
-
-            if not len(auth_state) > 0:
-                if self.invalid_jwt_logout:
-                    self.log.info("No projects with valid platform")
-                    self._logout_redirect()
-                else:
-                    raise web.HTTPError(403, "No projects with valid platform")
-
-        user = await self.auth_to_user({"name": username, "auth_state": auth_state, "groups": groups})
+        user = await self.auth_to_user(user_model)
         self.set_login_cookie(user)
         next_url = self.get_next_url(user)
         self.redirect(next_url)

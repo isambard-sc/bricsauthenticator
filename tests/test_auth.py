@@ -269,6 +269,36 @@ class TestBricsLoginHandler:
         result = handler._auth_state_from_projects(projects=normalized_projects, platform=platform)
         assert result == expected_result
 
+    @pytest.mark.parametrize(
+        "token,expected_user",
+        [
+            pytest.param(
+                {
+                    "projects": {
+                        "p1": {
+                            "name": "P1",
+                            "resources": [{"name": "portal.dummy.platform.shared", "username": "test_user.p1"}],
+                        }
+                    },
+                    "short_name": "test_user",
+                },
+                {"name": "test_user", "auth_state": {"p1": {"name": "P1", "username": "test_user.p1"}}, "groups": []},
+                id="normal user on project",
+            ),
+            pytest.param(
+                {
+                    "preferred_username": "test-admin",
+                    "groups": ["/BriCSAdmins"],
+                },
+                {"name": "test-admin", "auth_state": {}, "groups": ["brics-admins"]},
+                id="admin user",
+            ),
+        ],
+    )
+    def test_token_to_user(self, handler, token: dict, expected_user: dict):
+        user = handler._token_to_user(token)
+        assert user == expected_user
+
     @pytest.mark.asyncio
     async def test_get(self):
         # Create a real Application instance with necessary settings
