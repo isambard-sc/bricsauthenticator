@@ -27,7 +27,7 @@ class TestBricsAuthenticator:
         assert len(handlers) == 2
         assert handlers[0][0] == r"/login"
         assert handlers[0][1] == BricsLoginHandler
-        assert len(handlers[0][2]) == 5
+        assert len(handlers[0][2]) == 7
         assert handlers[0][2]["oidc_server"] == authenticator.oidc_server
         assert handlers[0][2]["platform"] == authenticator.brics_platform
         assert handlers[0][2]["jwt_audience"] == authenticator.jwt_audience
@@ -67,6 +67,8 @@ class TestBricsLoginHandler:
             jwt_leeway=5,
             oidc_server="https://example.com",
             invalid_jwt_logout=True,
+            admin_group_claim="/BriCSAdmins",
+            admin_group_name="brics-admins",
         )
         handler_instance.http_client = AsyncMock()
         handler_instance.jwks_client_factory = MagicMock()
@@ -322,6 +324,8 @@ class TestBricsLoginHandler:
             jwt_audience="dummy-audience",
             jwt_leeway=5,
             invalid_jwt_logout=True,
+            admin_group_claim="/BriCSAdmins",
+            admin_group_name="brics-admins",
         )
 
         # Mock handler dependencies
